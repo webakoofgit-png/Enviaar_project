@@ -48,33 +48,34 @@ export function ProductCard({
         >
           <Heart className={wishlist.includes(product.id) ? "fill-current" : ""} />
         </Button>
-        <div className="absolute inset-x-3 bottom-3 flex translate-y-3 gap-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100">
+        <div className="absolute inset-x-2 bottom-2 sm:inset-x-3 sm:bottom-3 flex gap-1.5 sm:gap-2 opacity-100 translate-y-0 lg:opacity-0 lg:translate-y-3 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition duration-300 focus-within:opacity-100 focus-within:translate-y-0">
           {onQuickView && (
             <Button
               variant="secondary"
-              className="flex-1 rounded-none"
+              size="sm"
+              className="flex-1 rounded-none text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
               onClick={() => onQuickView(product)}
             >
               Quick View
             </Button>
           )}
-          <Button className="flex-1 rounded-none" onClick={() => addToCart(product)}>
-            <ShoppingBag /> Add
+          <Button size="sm" className="flex-1 rounded-none text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9" onClick={() => addToCart(product)}>
+            <ShoppingBag className="size-3.5 sm:size-4" /> Add
           </Button>
         </div>
       </div>
-      <div className="pt-4 text-center">
+      <div className="pt-3 sm:pt-4 text-center">
         <Link
           to="/product/$slug"
           params={{ slug: product.slug }}
-          className="font-display text-xl hover:text-muted-foreground"
+          className="font-display text-base sm:text-xl line-clamp-1 hover:text-muted-foreground"
         >
           {product.name}
         </Link>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">
           {product.material} · {product.finish}
         </p>
-        <p className="mt-2 text-sm font-medium">{money(product.price)}</p>
+        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium">{money(product.price)}</p>
       </div>
     </article>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -41,17 +41,32 @@ const shopLinks = [
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [mobile, setMobile] = useState(false);
   const [mega, setMega] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { cart, wishlist, setSearchOpen, setAccountOpen, setCartOpen } = useStore();
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="bg-primary px-4 py-2 text-center text-[10px] uppercase tracking-[.15em] text-primary-foreground">
+      {/* Loading Screen */}
+      <div className={`loading-screen ${!loading ? 'hidden' : ''}`}>
+        <div className="loading-brand">ENVIAAR</div>
+        <div className="loading-bar" />
+      </div>
+
+      <div className="bg-secondary/70 border-b border-border/40 px-4 py-2 text-center text-[10px] uppercase tracking-[.15em] text-foreground">
         Complimentary Shipping <span className="mx-2">|</span> Easy Shopping{" "}
         <span className="mx-2">|</span> Premium Jewellery
       </div>
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto grid h-20 max-w-[1500px] grid-cols-3 items-center px-4 md:px-8">
-          <div>
+        <div className="mx-auto grid h-16 sm:h-20 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center px-3 sm:px-6 md:px-8 gap-2">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
@@ -65,10 +80,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               Menu / Collections
             </span>
           </div>
-          <Link to="/" className="text-center font-display text-3xl tracking-[.18em]">
+          <Link to="/" className="text-center font-display text-xl sm:text-2xl md:text-3xl tracking-[.14em] sm:tracking-[.18em] truncate">
             ENVIAAR
           </Link>
-          <div className="flex justify-end gap-1">
+          <div className="flex items-center justify-end gap-0.5 sm:gap-1">
             <Button
               variant="ghost"
               size="icon"
@@ -96,10 +111,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               size="icon"
               onClick={() => setCartOpen(true)}
               aria-label="Shopping bag"
+              className="relative"
             >
               <ShoppingBag />
               {count > 0 && (
-                <span className="absolute ml-5 -mt-5 grid size-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground">
+                <span className="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground font-medium">
                   {count}
                 </span>
               )}
@@ -174,8 +190,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
       </header>
       <main>{children}</main>
-      <footer className="border-t bg-secondary/45 px-5 py-14 md:px-10">
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.5fr_repeat(4,1fr)]">
+      <footer className="border-t bg-secondary/45 px-5 py-10 sm:py-14 md:px-10">
+        <div className="mx-auto grid max-w-7xl gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_repeat(4,1fr)]">
           <div>
             <p className="font-display text-3xl tracking-[.16em]">ENVIAAR</p>
             <p className="mt-5 max-w-xs text-sm text-muted-foreground">
@@ -194,7 +210,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             ["LEGAL", "Privacy", "Terms"],
           ].map(([title, ...links]) => (
             <div key={title}>
-              <p className="mb-5 text-xs tracking-[.16em]">{title}</p>
+              <p className="mb-4 sm:mb-5 text-xs tracking-[.16em] font-medium">{title}</p>
               {links.map((label) => (
                 <Link
                   key={label}
@@ -207,7 +223,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </div>
-        <div className="mx-auto mt-12 max-w-7xl border-t pt-6 text-xs text-muted-foreground">
+        <div className="mx-auto mt-10 sm:mt-12 max-w-7xl border-t pt-6 text-xs text-muted-foreground">
           © 2026 ENVIAAR
         </div>
       </footer>
@@ -217,21 +233,21 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            className="fixed inset-0 z-[90] bg-background p-6 lg:hidden"
+            className="fixed inset-0 z-[90] flex flex-col bg-background p-6 overflow-y-auto max-h-screen lg:hidden"
           >
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between">
               <p className="font-display text-2xl tracking-[.18em]">ENVIAAR</p>
               <Button variant="ghost" size="icon" onClick={() => setMobile(false)}>
                 <X />
               </Button>
             </div>
-            <nav className="mt-16">
+            <nav className="mt-10 flex-1 space-y-1">
               {nav.map((item) => (
                 <Link
                   key={item.label}
                   to={item.to}
                   onClick={() => setMobile(false)}
-                  className="flex items-center justify-between border-b py-5 font-display text-3xl"
+                  className="flex items-center justify-between border-b py-4 font-display text-2xl sm:text-3xl"
                 >
                   {item.label}
                   <ChevronRight size={18} />

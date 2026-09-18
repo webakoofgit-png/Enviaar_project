@@ -59,12 +59,12 @@ export function AppPage({ path }: { path: string }) {
 
 function PageHero({ eyebrow, title, copy }: { eyebrow?: string; title: string; copy?: string }) {
   return (
-    <header className="border-b bg-secondary/35 px-5 py-16 text-center md:py-24">
+    <header className="border-b bg-secondary/35 px-4 py-10 text-center sm:py-16 md:py-24">
       <p className="text-xs uppercase tracking-[.2em] text-muted-foreground">
         {eyebrow ?? "ENVIAAR"}
       </p>
-      <h1 className="mt-4 text-5xl md:text-7xl">{title}</h1>
-      {copy && <p className="mx-auto mt-5 max-w-2xl text-muted-foreground">{copy}</p>}
+      <h1 className="mt-3 text-3xl sm:text-5xl md:text-7xl">{title}</h1>
+      {copy && <p className="mx-auto mt-4 max-w-2xl text-xs sm:text-base text-muted-foreground px-2">{copy}</p>}
     </header>
   );
 }
@@ -79,12 +79,12 @@ function Collections() {
         title="Collections"
         copy="Distinct expressions for every day, every celebration and every version of you."
       />
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-4 py-16 md:grid-cols-3 md:gap-6 md:px-10">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2.5 sm:gap-4 px-4 py-10 sm:py-16 md:grid-cols-3 md:gap-6 md:px-10">
         {entries.map(([key, item], i) => (
           <Link
             key={key}
             to={`/collections/${key}` as "/shop"}
-            className={`group relative overflow-hidden ${i % 5 === 0 ? "md:col-span-2" : ""}`}
+            className={`group relative overflow-hidden ${i % 5 === 0 ? "col-span-2 md:col-span-2" : ""}`}
           >
             <img
               src={item.image}
@@ -92,9 +92,9 @@ function Collections() {
               className="aspect-[4/5] h-full w-full object-cover transition duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
-            <div className="absolute bottom-0 p-5 text-primary-foreground">
-              <h2 className="text-3xl md:text-5xl">{item.title}</h2>
-              <p className="mt-2 text-xs uppercase tracking-[.16em]">Explore collection</p>
+            <div className="absolute bottom-0 p-3.5 sm:p-5 text-primary-foreground">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl">{item.title}</h2>
+              <p className="mt-1 text-[10px] sm:text-xs uppercase tracking-[.16em]">Explore collection</p>
             </div>
           </Link>
         ))}
@@ -131,48 +131,48 @@ function ProductPage({ slug }: { slug: string }) {
     for (let i = 0; i < quantity; i++) addToCart(product, finish, size);
   };
   return (
-    <div className="mx-auto max-w-[1500px] px-4 py-8 md:px-10">
-      <p className="mb-7 text-xs text-muted-foreground">
+    <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 md:px-10">
+      <p className="mb-5 sm:mb-7 text-xs text-muted-foreground truncate">
         <Link to="/shop">Shop</Link> / {product.name}
       </p>
-      <div className="grid gap-10 lg:grid-cols-[3fr_2fr]">
+      <div className="grid gap-8 sm:gap-10 lg:grid-cols-[3fr_2fr]">
         <div className="grid gap-3 md:grid-cols-[90px_1fr]">
-          <div className="order-2 flex gap-2 overflow-x-auto md:order-1 md:block">
+          <div className="order-2 flex gap-2 overflow-x-auto pb-2 md:order-1 md:block md:pb-0">
             {gallery.map((src, i) => (
               <button
                 key={i}
                 onClick={() => setSelected(i)}
                 className={`mb-3 shrink-0 border ${selected === i ? "border-primary" : "border-transparent"}`}
               >
-                <img src={src} alt="" className="h-24 w-20 object-cover" />
+                <img src={src} alt="" className="h-20 w-16 sm:h-24 sm:w-20 object-cover" />
               </button>
             ))}
           </div>
           <button
-            className="order-1 cursor-zoom-in overflow-hidden bg-muted md:order-2"
+            className="order-1 cursor-zoom-in overflow-hidden bg-muted md:order-2 aspect-[4/5] w-full"
             onClick={() => window.open(gallery[selected], "_blank")}
             title="Open full-size image"
           >
             <img
               src={gallery[selected]}
               alt={product.name}
-              className="aspect-[4/5] h-full w-full object-cover transition duration-700 hover:scale-110"
+              className="aspect-[4/5] h-full w-full object-cover transition duration-700 hover:scale-105"
             />
           </button>
         </div>
         <div className="lg:sticky lg:top-40 lg:self-start">
           <p className="text-xs uppercase tracking-[.16em]">{product.badge ?? product.category}</p>
-          <h1 className="mt-3 text-5xl">{product.name}</h1>
-          <div className="mt-4 flex items-center gap-2 text-sm">
+          <h1 className="mt-2 sm:mt-3 text-3xl sm:text-4xl md:text-5xl">{product.name}</h1>
+          <div className="mt-3 sm:mt-4 flex items-center gap-2 text-sm">
             <Star size={15} className="fill-current" /> {product.rating} · 128 reviews
           </div>
-          <p className="mt-6 text-xl">{money(product.price)}</p>
-          <p className="mt-6 leading-7 text-muted-foreground">{product.description}</p>
+          <p className="mt-4 sm:mt-6 text-xl sm:text-2xl font-medium">{money(product.price)}</p>
+          <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{product.description}</p>
           <Option title="Finish" values={product.colors} value={finish} onChange={setFinish} />
           {product.sizes && (
             <Option title="Size" values={product.sizes} value={size ?? ""} onChange={setSize} />
           )}
-          <div className="mt-7 flex w-32 items-center justify-between border">
+          <div className="mt-6 sm:mt-7 flex w-32 items-center justify-between border">
             <button className="p-3" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
               <Minus size={15} />
             </button>
@@ -195,7 +195,7 @@ function ProductPage({ slug }: { slug: string }) {
             {wishlist.includes(product.id) ? "Saved to wishlist" : "Add to wishlist"}
           </button>
           <form
-            className="mt-8 flex gap-2 border-t pt-7"
+            className="mt-6 sm:mt-8 flex gap-2 border-t pt-6 sm:pt-7"
             onSubmit={(e) => {
               e.preventDefault();
               setDelivery(
@@ -216,7 +216,7 @@ function ProductPage({ slug }: { slug: string }) {
             </Button>
           </form>
           {delivery && <p className="mt-2 text-sm">{delivery}</p>}
-          <div className="mt-8 grid grid-cols-3 border-y py-5 text-center text-[11px]">
+          <div className="mt-6 sm:mt-8 grid grid-cols-3 border-y py-4 sm:py-5 text-center text-[10px] sm:text-[11px]">
             <span>
               <ShieldCheck className="mx-auto mb-2" />
               Secure Payments
@@ -232,12 +232,12 @@ function ProductPage({ slug }: { slug: string }) {
           </div>
           {["Product Details", "Materials & Finish", "Jewellery Care", "Shipping & Returns"].map(
             (x) => (
-              <details key={x} className="border-b py-5">
-                <summary className="flex cursor-pointer list-none justify-between">
+              <details key={x} className="border-b py-4 sm:py-5">
+                <summary className="flex cursor-pointer list-none justify-between text-sm sm:text-base">
                   {x}
                   <ChevronDown size={16} />
                 </summary>
-                <p className="pt-4 text-sm leading-6 text-muted-foreground">
+                <p className="pt-3 text-xs sm:text-sm leading-6 text-muted-foreground">
                   Thoughtfully finished, quality checked and packed with care. Store separately and
                   keep away from perfumes and moisture.
                 </p>
@@ -266,8 +266,8 @@ function Option({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="mt-7">
-      <p className="mb-3 text-xs uppercase tracking-[.14em]">
+    <div className="mt-6 sm:mt-7">
+      <p className="mb-2.5 text-xs uppercase tracking-[.14em]">
         {title}: {value}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -275,7 +275,7 @@ function Option({
           <button
             key={v}
             onClick={() => onChange(v)}
-            className={`border px-4 py-2 text-sm ${value === v ? "border-primary bg-primary text-primary-foreground" : ""}`}
+            className={`border px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm ${value === v ? "border-primary bg-primary text-primary-foreground font-medium" : ""}`}
           >
             {v}
           </button>
@@ -286,9 +286,9 @@ function Option({
 }
 function ProductRail({ title, list }: { title: string; list: Product[] }) {
   return (
-    <section className="py-20">
-      <h2 className="mb-10 text-center text-5xl">{title}</h2>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <section className="py-14 sm:py-20">
+      <h2 className="mb-8 sm:mb-10 text-center text-3xl sm:text-5xl">{title}</h2>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {list.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
@@ -306,8 +306,7 @@ function CartPage() {
   return (
     <>
       <PageHero title="Shopping Cart" />
-      <div className="mx-auto grid max-w-6xl gap-12 px-5 py-14 lg:grid-cols-[1fr_380px]">
-        {" "}
+      <div className="mx-auto grid max-w-6xl gap-8 sm:gap-12 px-4 sm:px-5 py-10 sm:py-14 lg:grid-cols-[1fr_380px]">
         <div>
           {cart.length === 0 ? (
             <Empty title="Your bag is empty" />
@@ -315,14 +314,14 @@ function CartPage() {
             cart.map(({ product, quantity, finish, size }) => (
               <div
                 key={`${product.id}-${finish}-${size}`}
-                className="grid grid-cols-[90px_1fr_auto] gap-4 border-b py-5"
+                className="grid grid-cols-[75px_1fr_auto] sm:grid-cols-[90px_1fr_auto] gap-3 sm:gap-4 border-b py-4 sm:py-5"
               >
-                <img src={product.image} alt={product.name} className="h-28 w-24 object-cover" />
+                <img src={product.image} alt={product.name} className="h-24 w-20 sm:h-28 sm:w-24 object-cover" />
                 <div>
                   <Link
                     to="/product/$slug"
                     params={{ slug: product.slug }}
-                    className="font-display text-xl"
+                    className="font-display text-base sm:text-xl line-clamp-1"
                   >
                     {product.name}
                   </Link>
@@ -330,25 +329,25 @@ function CartPage() {
                     {finish}
                     {size ? ` · ${size}` : ""}
                   </p>
-                  <div className="mt-4 flex w-28 items-center justify-between border">
+                  <div className="mt-3 flex w-24 sm:w-28 items-center justify-between border">
                     <button
                       onClick={() => updateQuantity(product.id, quantity - 1)}
-                      className="p-2"
+                      className="p-1.5 sm:p-2"
                     >
                       <Minus size={13} />
                     </button>
-                    {quantity}
+                    <span className="text-xs sm:text-sm">{quantity}</span>
                     <button
                       onClick={() => updateQuantity(product.id, quantity + 1)}
-                      className="p-2"
+                      className="p-1.5 sm:p-2"
                     >
                       <Plus size={13} />
                     </button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p>{money(product.price * quantity)}</p>
-                  <button onClick={() => removeFromCart(product.id)} className="mt-12">
+                <div className="text-right flex flex-col justify-between">
+                  <p className="text-sm font-medium">{money(product.price * quantity)}</p>
+                  <button onClick={() => removeFromCart(product.id)} className="self-end text-muted-foreground hover:text-destructive">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -356,10 +355,10 @@ function CartPage() {
             ))
           )}
         </div>
-        <aside className="h-fit bg-secondary/35 p-7">
-          <h2 className="text-3xl">Order Summary</h2>
+        <aside className="h-fit bg-secondary/35 p-5 sm:p-7">
+          <h2 className="text-2xl sm:text-3xl">Order Summary</h2>
           <form
-            className="mt-6 flex"
+            className="mt-5 sm:mt-6 flex"
             onSubmit={(e) => {
               e.preventDefault();
               setApplied(coupon.trim().toUpperCase() === "ENVIAAR10");
@@ -379,11 +378,11 @@ function CartPage() {
             label="Shipping"
             text={subtotal >= 5000 ? "Complimentary" : "Calculated at checkout"}
           />
-          <div className="mt-5 flex justify-between border-t pt-5 text-lg">
+          <div className="mt-5 flex justify-between border-t pt-5 text-base sm:text-lg">
             <strong>Total</strong>
             <strong>{money(subtotal - discount)}</strong>
           </div>
-          <Button asChild variant="luxury" size="lg" className="mt-7 w-full">
+          <Button asChild variant="luxury" size="lg" className="mt-6 sm:mt-7 w-full">
             <Link to="/checkout">Proceed to Checkout</Link>
           </Button>
         </aside>
@@ -393,7 +392,7 @@ function CartPage() {
 }
 function SummaryRow({ label, value, text }: { label: string; value?: number; text?: string }) {
   return (
-    <div className="mt-5 flex justify-between text-sm">
+    <div className="mt-4 sm:mt-5 flex justify-between text-xs sm:text-sm">
       <span>{label}</span>
       <span>{text ?? money(value ?? 0)}</span>
     </div>
@@ -415,11 +414,11 @@ function CheckoutPage() {
   return (
     <>
       <PageHero title="Checkout" eyebrow="SECURE CHECKOUT" />
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 lg:grid-cols-[1fr_380px]">
+      <div className="mx-auto grid max-w-6xl gap-8 sm:gap-10 px-4 sm:px-5 py-10 sm:py-14 lg:grid-cols-[1fr_380px]">
         <div>
-          <div className="mb-10 flex gap-3 text-sm">
+          <div className="mb-8 sm:mb-10 flex flex-wrap gap-3 text-xs sm:text-sm">
             {["Information", "Shipping", "Payment"].map((x, i) => (
-              <span key={x} className={step === i ? "font-bold" : "text-muted-foreground"}>
+              <span key={x} className={step === i ? "font-bold text-foreground" : "text-muted-foreground"}>
                 {i + 1}. {x}
               </span>
             ))}
@@ -434,7 +433,7 @@ function CheckoutPage() {
             <div className="space-y-3">
               {["UPI", "Credit / Debit Card", "Net Banking", "Wallet", "Cash on Delivery"].map(
                 (x, i) => (
-                  <label key={x} className="flex gap-3 border p-4">
+                  <label key={x} className="flex gap-3 border p-3.5 sm:p-4 text-sm cursor-pointer hover:bg-muted/30">
                     <input type="radio" name="payment" defaultChecked={i === 0} />
                     {x}
                   </label>
@@ -457,19 +456,19 @@ function CheckoutPage() {
             </Button>
           </div>
         </div>
-        <aside className="h-fit bg-secondary/35 p-6">
-          <h2 className="text-3xl">Your Order</h2>
+        <aside className="h-fit bg-secondary/35 p-5 sm:p-6">
+          <h2 className="text-2xl sm:text-3xl">Your Order</h2>
           {cart.map((x) => (
-            <div key={x.product.id} className="mt-5 flex gap-3">
-              <img src={x.product.image} className="h-16 w-14 object-cover" />
-              <div className="flex-1 text-sm">
-                {x.product.name}
+            <div key={x.product.id} className="mt-4 sm:mt-5 flex gap-3">
+              <img src={x.product.image} className="h-14 w-12 sm:h-16 sm:w-14 object-cover" />
+              <div className="flex-1 text-xs sm:text-sm">
+                <p className="font-medium line-clamp-1">{x.product.name}</p>
                 <p className="text-xs text-muted-foreground">Qty {x.quantity}</p>
               </div>
-              <span>{money(x.product.price * x.quantity)}</span>
+              <span className="text-xs sm:text-sm font-medium">{money(x.product.price * x.quantity)}</span>
             </div>
           ))}
-          <div className="mt-6 flex justify-between border-t pt-5">
+          <div className="mt-6 flex justify-between border-t pt-4 sm:pt-5 text-sm sm:text-base">
             <strong>Total</strong>
             <strong>{money(total)}</strong>
           </div>
@@ -480,13 +479,13 @@ function CheckoutPage() {
 }
 function FormGrid({ fields }: { fields: string[] }) {
   return (
-    <form className="grid gap-4 md:grid-cols-2">
+    <form className="grid gap-3.5 sm:gap-4 sm:grid-cols-2">
       {fields.map((x, i) => (
         <Input
           key={x}
           required
           placeholder={x}
-          className={i === 1 && fields.length > 2 ? "md:col-span-2" : ""}
+          className={i === 1 && fields.length > 2 ? "sm:col-span-2" : ""}
         />
       ))}
     </form>
@@ -499,9 +498,9 @@ function WishlistPage() {
   return (
     <>
       <PageHero title="Wishlist" copy="The pieces you would love to return to." />
-      <div className="mx-auto max-w-7xl px-5 py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-5 py-10 sm:py-16">
         {list.length ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
             {list.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
@@ -529,17 +528,17 @@ function SearchPage() {
   return (
     <>
       <PageHero title="Search ENVIAAR" />
-      <div className="mx-auto max-w-7xl px-5 py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-5 py-10 sm:py-12">
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search jewellery, collections and materials"
-          className="mx-auto h-14 max-w-2xl text-lg"
+          className="mx-auto h-12 sm:h-14 max-w-2xl text-base sm:text-lg"
         />
-        <p className="my-8 text-sm">
+        <p className="my-6 sm:my-8 text-xs sm:text-sm text-center sm:text-left">
           {list.length} results {q && `for “${q}”`}
         </p>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           {list.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
@@ -577,14 +576,14 @@ function AboutPage() {
         <section key={title} className="grid md:grid-cols-2">
           <img
             src={img}
-            className={`h-[520px] w-full object-cover ${i % 2 ? "md:order-2" : ""}`}
+            className={`h-[280px] sm:h-[420px] md:h-[520px] w-full object-cover ${i % 2 ? "md:order-2" : ""}`}
             alt={title}
           />
-          <div className="flex items-center px-8 py-16 md:px-20">
+          <div className="flex items-center px-5 py-10 sm:px-8 sm:py-16 md:px-20">
             <div>
               <p className="text-xs tracking-[.18em]">THE ENVIAAR PHILOSOPHY</p>
-              <h2 className="mt-5 text-5xl">{title}</h2>
-              <p className="mt-6 max-w-lg leading-7 text-muted-foreground">{copy}</p>
+              <h2 className="mt-3 sm:mt-5 text-3xl sm:text-5xl">{title}</h2>
+              <p className="mt-4 sm:mt-6 max-w-lg text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{copy}</p>
             </div>
           </div>
         </section>
@@ -600,16 +599,16 @@ function ContactPage() {
         title="We’d Love to Hear From You"
         copy="Questions about a piece, an order or jewellery care? Our team is here to help."
       />
-      <div className="mx-auto grid max-w-5xl gap-12 px-5 py-16 md:grid-cols-[1fr_2fr]">
+      <div className="mx-auto grid max-w-5xl gap-8 sm:gap-12 px-4 sm:px-5 py-10 sm:py-16 md:grid-cols-[1fr_2fr]">
         <div>
-          <h2 className="text-3xl">Contact</h2>
-          <p className="mt-5 text-sm leading-7">
+          <h2 className="text-2xl sm:text-3xl">Contact</h2>
+          <p className="mt-4 sm:mt-5 text-xs sm:text-sm leading-6 sm:leading-7">
             care@enviaar.com
             <br />
             Monday–Saturday, 10am–6pm IST
           </p>
           <a
-            className="mt-5 inline-block underline"
+            className="mt-4 sm:mt-5 inline-block text-xs sm:text-sm underline"
             href="https://www.instagram.com/enviaar"
             target="_blank"
             rel="noreferrer"
@@ -625,14 +624,14 @@ function ContactPage() {
               e.preventDefault();
               setDone(true);
             }}
-            className="grid gap-4 md:grid-cols-2"
+            className="grid gap-3.5 sm:gap-4 md:grid-cols-2"
           >
             <Input required placeholder="Name" />
             <Input required type="email" placeholder="Email" />
             <Input required placeholder="Phone" />
             <Input required placeholder="Subject" />
-            <Textarea required placeholder="Message" className="min-h-40 md:col-span-2" />
-            <Button variant="luxury" size="lg" className="md:col-span-2">
+            <Textarea required placeholder="Message" className="min-h-32 sm:min-h-40 md:col-span-2" />
+            <Button variant="luxury" size="lg" className="md:col-span-2 w-full">
               Send Message
             </Button>
           </form>
@@ -648,11 +647,11 @@ function AccountPage() {
     return (
       <>
         <PageHero title="Customer Account" />
-        <div className="py-24 text-center">
-          <p className="text-muted-foreground">
+        <div className="py-16 sm:py-24 text-center px-4">
+          <p className="text-sm text-muted-foreground">
             Sign in to view your profile, addresses and orders.
           </p>
-          <Button className="mt-6" variant="luxury" onClick={() => setAccountOpen(true)}>
+          <Button className="mt-6 w-full sm:w-auto" variant="luxury" onClick={() => setAccountOpen(true)}>
             Login / Create Account
           </Button>
         </div>
@@ -661,12 +660,12 @@ function AccountPage() {
   return (
     <>
       <PageHero title="Welcome Back" />
-      <div className="mx-auto grid max-w-5xl gap-4 px-5 py-16 md:grid-cols-4">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 px-4 sm:px-5 py-10 sm:py-16">
         {["Profile", "Addresses", "Orders", "Wishlist"].map((x) => (
           <Link
             key={x}
             to={x === "Orders" ? "/orders" : x === "Wishlist" ? "/wishlist" : "/account"}
-            className="border p-8 text-center font-display text-2xl"
+            className="border p-5 sm:p-8 text-center font-display text-xl sm:text-2xl hover:border-primary transition"
           >
             {x}
           </Link>
