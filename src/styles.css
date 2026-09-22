@@ -201,8 +201,8 @@
 
 .loading-bar {
   width: 140px;
-  height: 2px;
-  background-color: var(--color-border);
+  height: 3px;
+  background-color: color-mix(in srgb, var(--color-foreground) 15%, transparent);
   border-radius: 9999px;
   overflow: hidden;
   position: relative;
@@ -215,7 +215,7 @@
   left: 0;
   height: 100%;
   width: 100%;
-  background-color: var(--color-primary);
+  background-color: var(--color-foreground);
   border-radius: 9999px;
   animation: loading-bar-progress 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
