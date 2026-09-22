@@ -79,7 +79,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             </Button>
             <Link to="/" className="flex items-center py-1">
               <img
-                src="/image.png"
+                src="/image-copy.png"
                 alt="ENVIAAR"
                 className="h-10 sm:h-14 md:h-18 w-auto object-contain max-h-18"
               />
@@ -200,7 +200,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto grid max-w-7xl gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_repeat(4,1fr)]">
           <div>
             <Link to="/">
-              <img src="/image.png" alt="ENVIAAR" className="h-10 sm:h-12 w-auto object-contain" />
+              <img src="/image-copy.png" alt="ENVIAAR" className="h-10 sm:h-12 w-auto object-contain" />
             </Link>
             <p className="mt-5 max-w-xs text-sm text-muted-foreground">
               Contemporary jewellery for everyday elegance and memorable occasions.
@@ -245,7 +245,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           >
             <div className="flex items-center justify-between">
               <Link to="/" onClick={() => setMobile(false)}>
-                <img src="/image.png" alt="ENVIAAR" className="h-8 w-auto object-contain" />
+                <img src="/image-copy.png" alt="ENVIAAR" className="h-8 w-auto object-contain" />
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setMobile(false)}>
                 <X />

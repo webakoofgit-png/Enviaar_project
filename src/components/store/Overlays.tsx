@@ -370,7 +370,7 @@ export function PromoPopup() {
               >
                 <X />
               </Button>
-              <img src="/image.png" alt="ENVIAAR" className="h-8 w-auto mx-auto object-contain" />
+              <img src="/image-copy.png" alt="ENVIAAR" className="h-8 w-auto mx-auto object-contain" />
               <h2 className="mt-12 text-4xl">A Little Something For You</h2>
               <p className="mt-5 text-muted-foreground">
                 Join the ENVIAAR circle and enjoy 10% off your first order.
