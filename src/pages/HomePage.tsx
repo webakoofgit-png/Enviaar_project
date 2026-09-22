@@ -63,7 +63,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 sm:px-5 py-14 sm:py-24 md:px-10 md:py-32">
+      <section className="mx-auto max-w-7xl px-4 sm:px-5 pt-12 sm:pt-20 md:pt-24 pb-6 sm:pb-10 md:pb-12 md:px-10">
         <SectionTitle eyebrow="A WORLD OF ENVIAAR" title="Shop by Category" />
         <div className="mt-8 sm:mt-12 grid auto-rows-[220px] sm:auto-rows-[280px] grid-cols-2 gap-2.5 sm:gap-3 md:auto-rows-[310px] md:grid-cols-12">
           {categories.map((cat) => (
@@ -294,7 +294,7 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
 }
 function ProductSection({ title, products: list }: { title: string; products: typeof products }) {
   return (
-    <section className="mx-auto max-w-7xl px-5 py-24 md:px-10 md:py-32">
+    <section className="mx-auto max-w-7xl px-5 py-10 sm:py-14 md:px-10 md:py-16">
       <SectionTitle eyebrow="THE LATEST EDIT" title={title} />
       <div className="mt-12 grid grid-cols-2 gap-x-3 gap-y-10 md:grid-cols-4 md:gap-6">
         {list.map((p) => (
