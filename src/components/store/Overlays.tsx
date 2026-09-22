@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronRight, Minus, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export function SearchOverlay() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setSearchOpen(false);
-    navigate({ to: "/search", search: { q: query } });
+    navigate(`/search?q=${encodeURIComponent(query)}`);
   };
   return (
     <AnimatePresence>
@@ -80,8 +80,7 @@ export function SearchOverlay() {
                     {found.map((p) => (
                       <Link
                         key={p.id}
-                        to="/product/$slug"
-                        params={{ slug: p.slug }}
+                        to={`/product/${p.slug}`}
                         onClick={() => setSearchOpen(false)}
                       >
                         <img
@@ -338,10 +337,9 @@ export function AccountDrawer() {
 export function PromoPopup() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (localStorage.getItem("enviaar-promo") !== "dismissed") {
-      const timer = window.setTimeout(() => setOpen(true), 4000);
-      return () => window.clearTimeout(timer);
-    }
+    if (localStorage.getItem("enviaar-promo") === "dismissed") return;
+    const timer = window.setTimeout(() => setOpen(true), 4000);
+    return () => window.clearTimeout(timer);
   }, []);
   const close = () => {
     localStorage.setItem("enviaar-promo", "dismissed");
@@ -359,7 +357,7 @@ export function PromoPopup() {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <img
-              src={products[2].image}
+              src={products[2]?.image ?? ""}
               alt="ENVIAAR jewellery"
               className="hidden h-full min-h-96 w-full object-cover md:block"
             />
@@ -372,7 +370,7 @@ export function PromoPopup() {
               >
                 <X />
               </Button>
-              <p className="text-xl tracking-[.22em]">ENVIAAR</p>
+              <img src="/image.png" alt="ENVIAAR" className="h-8 w-auto mx-auto object-contain" />
               <h2 className="mt-12 text-4xl">A Little Something For You</h2>
               <p className="mt-5 text-muted-foreground">
                 Join the ENVIAAR circle and enjoy 10% off your first order.

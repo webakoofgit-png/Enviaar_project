@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronRight,
@@ -65,8 +65,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <span className="mx-2">|</span> Premium Jewellery
       </div>
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto grid h-16 sm:h-20 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center px-3 sm:px-6 md:px-8 gap-2">
-          <div className="flex items-center">
+        <div className="mx-auto flex h-20 sm:h-24 max-w-[1500px] items-center justify-between px-4 sm:px-8 md:px-12 gap-4">
+          {/* Left: Mobile Menu Button + Logo */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -76,14 +77,31 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             >
               <Menu />
             </Button>
-            <span className="hidden text-xs uppercase tracking-[.15em] lg:block">
-              Menu / Collections
-            </span>
+            <Link to="/" className="flex items-center py-1">
+              <img
+                src="/image.png"
+                alt="ENVIAAR"
+                className="h-10 sm:h-14 md:h-18 w-auto object-contain max-h-18"
+              />
+            </Link>
           </div>
-          <Link to="/" className="text-center font-display text-xl sm:text-2xl md:text-3xl tracking-[.14em] sm:tracking-[.18em] truncate">
-            ENVIAAR
-          </Link>
-          <div className="flex items-center justify-end gap-0.5 sm:gap-1">
+
+          {/* Middle: Desktop Navigation Items */}
+          <nav className="hidden h-full items-center justify-center gap-6 xl:gap-9 text-xs xl:text-sm tracking-[.18em] font-medium lg:flex">
+            {nav.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                onMouseEnter={() => item.label === "SHOP" && setMega(true)}
+                className="py-4 hover:text-muted-foreground transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right: Actions (Search, Account, Wishlist, Bag) */}
+          <div className="flex items-center justify-end gap-0.5 sm:gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -122,18 +140,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </div>
-        <nav className="hidden h-11 items-center justify-center gap-9 border-t text-[11px] tracking-[.16em] lg:flex">
-          {nav.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              onMouseEnter={() => item.label === "SHOP" && setMega(true)}
-              className="py-4 hover:text-muted-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
         <AnimatePresence>
           {mega && (
             <motion.div
@@ -193,7 +199,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <footer className="border-t bg-secondary/45 px-5 py-10 sm:py-14 md:px-10">
         <div className="mx-auto grid max-w-7xl gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_repeat(4,1fr)]">
           <div>
-            <p className="font-display text-3xl tracking-[.16em]">ENVIAAR</p>
+            <Link to="/">
+              <img src="/image.png" alt="ENVIAAR" className="h-10 sm:h-12 w-auto object-contain" />
+            </Link>
             <p className="mt-5 max-w-xs text-sm text-muted-foreground">
               Contemporary jewellery for everyday elegance and memorable occasions.
             </p>
@@ -236,7 +244,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             className="fixed inset-0 z-[90] flex flex-col bg-background p-6 overflow-y-auto max-h-screen lg:hidden"
           >
             <div className="flex items-center justify-between">
-              <p className="font-display text-2xl tracking-[.18em]">ENVIAAR</p>
+              <Link to="/" onClick={() => setMobile(false)}>
+                <img src="/image.png" alt="ENVIAAR" className="h-8 w-auto object-contain" />
+              </Link>
               <Button variant="ghost" size="icon" onClick={() => setMobile(false)}>
                 <X />
               </Button>

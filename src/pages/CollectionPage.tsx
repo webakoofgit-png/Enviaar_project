@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/store/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { collectionInfo, products } from "@/data/store";
 import type { Product } from "@/types/store";
 
 export function CollectionPage({ collection = "shop" }: { collection?: string }) {
-  const info = collectionInfo[collection] ?? collectionInfo.shop;
+  const info = collectionInfo[collection] ?? collectionInfo["shop"]!;
   const [sort, setSort] = useState("featured");
   const [material, setMaterial] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -108,7 +109,7 @@ export function CollectionPage({ collection = "shop" }: { collection?: string })
                 <h3 className="text-2xl sm:text-4xl">{quick.name}</h3>
                 <p className="mt-3 sm:mt-4 text-xs sm:text-sm leading-relaxed text-muted-foreground">{quick.description}</p>
                 <Button asChild variant="luxury" size="lg" className="mt-6 sm:mt-8 w-full">
-                  <a href={`/product/${quick.slug}`}>View Product</a>
+                  <Link to={`/product/${quick.slug}`} onClick={() => setQuick(null)}>View Product</Link>
                 </Button>
               </div>
             </div>

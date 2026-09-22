@@ -16,4 +16,5 @@ export type Product = {
   rating: number;
 };
 
-export type CartItem = { product: Product; quantity: number; finish: string; size?: string };
+export type CartItem = { product: Product; quantity: number; finish: string; size?: string | undefined };
+

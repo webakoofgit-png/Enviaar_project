@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Check,
   ChevronDown,
@@ -38,9 +38,11 @@ const collectionPaths = new Set([
 
 export function AppPage({ path }: { path: string }) {
   const clean = path.replace(/^\/+|\/+$/g, "");
-  if (clean.startsWith("product/")) return <ProductPage slug={clean.split("/")[1]} />;
-  if (clean.startsWith("collections/") && collectionPaths.has(clean.split("/")[1]))
-    return <CollectionPage collection={clean.split("/")[1]} />;
+  const parts = clean.split("/");
+  const sub = parts[1] ?? "";
+  if (clean.startsWith("product/")) return <ProductPage slug={sub} />;
+  if (clean.startsWith("collections/") && collectionPaths.has(sub))
+    return <CollectionPage collection={sub} />;
   if (clean === "collections") return <Collections />;
   if (collectionPaths.has(clean)) return <CollectionPage collection={clean} />;
   if (clean === "cart") return <CartPage />;
@@ -51,8 +53,8 @@ export function AppPage({ path }: { path: string }) {
   if (clean === "contact") return <ContactPage />;
   if (clean === "account") return <AccountPage />;
   if (clean === "orders") return <OrdersPage />;
-  if (clean.startsWith("order/")) return <OrderPage id={clean.split("/")[1]} />;
-  const policy = policies[clean];
+  if (clean.startsWith("order/")) return <OrderPage id={sub} />;
+  const policy = policies[clean as keyof typeof policies];
   if (policy) return <PolicyPage title={policy.title} sections={policy.sections} />;
   return <NotFound />;
 }
@@ -69,7 +71,7 @@ function PageHero({ eyebrow, title, copy }: { eyebrow?: string; title: string; c
   );
 }
 
-function Collections() {
+export function Collections() {
   const entries = Object.entries(collectionInfo).filter(
     ([key]) => !["shop", "festive", "new-arrivals", "bestsellers"].includes(key),
   );
@@ -83,7 +85,7 @@ function Collections() {
         {entries.map(([key, item], i) => (
           <Link
             key={key}
-            to={`/collections/${key}` as "/shop"}
+            to={`/collections/${key}`}
             className={`group relative overflow-hidden ${i % 5 === 0 ? "col-span-2 md:col-span-2" : ""}`}
           >
             <img
@@ -103,7 +105,7 @@ function Collections() {
   );
 }
 
-function ProductPage({ slug }: { slug: string }) {
+export function ProductPage({ slug }: { slug: string }) {
   const product = products.find((p) => p.slug === slug);
   const { addToCart, toggleWishlist, wishlist } = useStore();
   const [finish, setFinish] = useState(product?.colors[0] ?? "Gold");
@@ -297,7 +299,7 @@ function ProductRail({ title, list }: { title: string; list: Product[] }) {
   );
 }
 
-function CartPage() {
+export function CartPage() {
   const { cart, updateQuantity, removeFromCart } = useStore();
   const [coupon, setCoupon] = useState("");
   const [applied, setApplied] = useState(false);
@@ -319,8 +321,7 @@ function CartPage() {
                 <img src={product.image} alt={product.name} className="h-24 w-20 sm:h-28 sm:w-24 object-cover" />
                 <div>
                   <Link
-                    to="/product/$slug"
-                    params={{ slug: product.slug }}
+                    to={`/product/${product.slug}`}
                     className="font-display text-base sm:text-xl line-clamp-1"
                   >
                     {product.name}
@@ -399,7 +400,7 @@ function SummaryRow({ label, value, text }: { label: string; value?: number; tex
   );
 }
 
-function CheckoutPage() {
+export function CheckoutPage() {
   const { cart } = useStore();
   const [step, setStep] = useState(0);
   const [placed, setPlaced] = useState(false);
@@ -492,7 +493,7 @@ function FormGrid({ fields }: { fields: string[] }) {
   );
 }
 
-function WishlistPage() {
+export function WishlistPage() {
   const { wishlist } = useStore();
   const list = products.filter((p) => wishlist.includes(p.id));
   return (
@@ -512,11 +513,9 @@ function WishlistPage() {
     </>
   );
 }
-function SearchPage() {
-  const initial =
-    typeof window !== "undefined"
-      ? (new URLSearchParams(window.location.search).get("q") ?? "")
-      : "";
+export function SearchPage() {
+  const [searchParams] = useSearchParams();
+  const initial = searchParams.get("q") ?? "";
   const [q, setQ] = useState(initial);
   const list = useMemo(
     () =>
@@ -548,7 +547,7 @@ function SearchPage() {
   );
 }
 
-function AboutPage() {
+export function AboutPage() {
   return (
     <>
       <PageHero
@@ -591,7 +590,7 @@ function AboutPage() {
     </>
   );
 }
-function ContactPage() {
+export function ContactPage() {
   const [done, setDone] = useState(false);
   return (
     <>
@@ -641,7 +640,7 @@ function ContactPage() {
   );
 }
 
-function AccountPage() {
+export function AccountPage() {
   const { isLoggedIn, setAccountOpen, logout } = useStore();
   if (!isLoggedIn)
     return (
@@ -679,14 +678,13 @@ function AccountPage() {
     </>
   );
 }
-function OrdersPage() {
+export function OrdersPage() {
   return (
     <>
       <PageHero title="My Orders" />
       <div className="mx-auto max-w-4xl px-5 py-16">
         <Link
-          to="/order/$id"
-          params={{ id: "ENV-2026-1042" }}
+          to="/order/ENV-2026-1042"
           className="grid gap-4 border p-6 sm:grid-cols-4"
         >
           <span>
@@ -714,7 +712,7 @@ function OrdersPage() {
     </>
   );
 }
-function OrderPage({ id }: { id: string }) {
+export function OrderPage({ id }: { id: string }) {
   return (
     <>
       <PageHero title={`Order ${id}`} />
@@ -734,7 +732,7 @@ function OrderPage({ id }: { id: string }) {
   );
 }
 
-function PolicyPage({ title, sections }: { title: string; sections: string[] }) {
+export function PolicyPage({ title, sections }: { title: string; sections: string[] }) {
   return (
     <>
       <PageHero title={title} />
@@ -755,7 +753,7 @@ function PolicyPage({ title, sections }: { title: string; sections: string[] }) 
     </>
   );
 }
-const policies: Record<string, { title: string; sections: string[] }> = {
+export const policies = {
   privacy: {
     title: "Privacy Policy",
     sections: ["Information We Collect", "How We Use Information", "Your Choices"],
@@ -806,7 +804,7 @@ function SuccessBlock() {
     </div>
   );
 }
-function NotFound() {
+export function NotFound() {
   return (
     <div className="grid min-h-[60vh] place-items-center text-center">
       <div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Gem, HeartHandshake, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export function HomePage() {
           {categories.map((cat) => (
             <Link
               key={cat.key}
-              to={`/collections/${cat.key}` as "/shop"}
+              to={`/collections/${cat.key}`}
               className={`group relative overflow-hidden ${cat.className}`}
             >
               <img
@@ -125,37 +125,40 @@ export function HomePage() {
             loading="lazy"
             className="h-[420px] sm:h-[600px] md:h-[760px] w-full object-cover"
           />
-          {[0, 2].map((index, i) => (
-            <div
-              key={index}
-              className={`absolute ${i ? "left-[58%] top-[34%]" : "left-[68%] top-[20%]"}`}
-            >
-              <Button
-                size="icon"
-                className="size-8 sm:size-9 rounded-full border border-primary-foreground bg-background/90 text-foreground hover:bg-background shadow-md"
-                onClick={() => setLook(look === index ? null : index)}
-                aria-label={`View ${products[index].name}`}
+          {[0, 2].map((index, i) => {
+            const item = products[index];
+            if (!item) return null;
+            return (
+              <div
+                key={index}
+                className={`absolute ${i ? "left-[58%] top-[34%]" : "left-[68%] top-[20%]"}`}
               >
-                <span className="text-lg">+</span>
-              </Button>
-              {look === index && (
-                <div className="absolute left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0 top-11 z-20 flex w-52 sm:w-64 gap-2.5 bg-background p-3 shadow-xl border">
-                  <img src={products[index].image} alt="" className="h-16 sm:h-20 w-14 sm:w-16 object-cover" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-sm sm:text-lg truncate">{products[index].name}</p>
-                    <p className="text-xs font-medium">{money(products[index].price)}</p>
-                    <Link
-                      to="/product/$slug"
-                      params={{ slug: products[index].slug }}
-                      className="mt-1.5 inline-block text-xs underline"
-                    >
-                      View Product
-                    </Link>
+                <Button
+                  size="icon"
+                  className="size-8 sm:size-9 rounded-full border border-primary-foreground bg-background/90 text-foreground hover:bg-background shadow-md"
+                  onClick={() => setLook(look === index ? null : index)}
+                  aria-label={`View ${item.name}`}
+                >
+                  <span className="text-lg">+</span>
+                </Button>
+                {look === index && (
+                  <div className="absolute left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0 top-11 z-20 flex w-52 sm:w-64 gap-2.5 bg-background p-3 shadow-xl border">
+                    <img src={item.image} alt="" className="h-16 sm:h-20 w-14 sm:w-16 object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-sm sm:text-lg truncate">{item.name}</p>
+                      <p className="text-xs font-medium">{money(item.price)}</p>
+                      <Link
+                        to={`/product/${item.slug}`}
+                        className="mt-1.5 inline-block text-xs underline"
+                      >
+                        View Product
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -183,19 +186,19 @@ export function HomePage() {
 
       <section className="border-y px-4 sm:px-5 py-10 sm:py-14 md:px-10">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-8 gap-x-4 sm:gap-y-10 md:grid-cols-4">
-          {[
+          {([
             [Sparkles, "ANTI-TARNISH", "Designed for lasting shine."],
             [HeartHandshake, "HYPOALLERGENIC", "Made with comfort in mind."],
             [ShieldCheck, "PREMIUM FINISH", "Rhodium & gold-plated selections."],
             [Gem, "92.5 SILVER", "Selected sterling silver pieces."],
-          ].map(([Icon, title, copy]) => (
+          ] as const).map(([Icon, title, copy]) => (
             <div
-              key={String(title)}
+              key={title}
               className="border-border px-2 sm:px-4 text-center md:border-r last:border-r-0"
             >
               <Icon className="mx-auto mb-3 sm:mb-4" size={22} strokeWidth={1} />
-              <p className="text-xs tracking-[.16em] font-medium">{String(title)}</p>
-              <p className="mt-1.5 sm:mt-2 text-xs text-muted-foreground">{String(copy)}</p>
+              <p className="text-xs tracking-[.16em] font-medium">{title}</p>
+              <p className="mt-1.5 sm:mt-2 text-xs text-muted-foreground">{copy}</p>
             </div>
           ))}
         </div>
@@ -231,8 +234,8 @@ export function HomePage() {
             images.festive,
             images.hero,
             images.mens,
-            products[0].image,
-            products[5].image,
+            products[0]?.image ?? "",
+            products[5]?.image ?? "",
           ].map((image, i) => (
             <button
               key={i}

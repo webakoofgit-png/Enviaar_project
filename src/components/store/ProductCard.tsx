@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/context/StoreContext";
@@ -17,8 +17,7 @@ export function ProductCard({
     <article className="group min-w-0">
       <div className="relative aspect-[4/5] overflow-hidden bg-muted">
         <Link
-          to="/product/$slug"
-          params={{ slug: product.slug }}
+          to={`/product/${product.slug}`}
           aria-label={`View ${product.name}`}
         >
           <img
@@ -66,8 +65,7 @@ export function ProductCard({
       </div>
       <div className="pt-3 sm:pt-4 text-center">
         <Link
-          to="/product/$slug"
-          params={{ slug: product.slug }}
+          to={`/product/${product.slug}`}
           className="font-display text-base sm:text-xl line-clamp-1 hover:text-muted-foreground"
         >
           {product.name}
@@ -80,3 +78,4 @@ export function ProductCard({
     </article>
   );
 }
+
