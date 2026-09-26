@@ -5,7 +5,9 @@ import { Gem, HeartHandshake, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/store/ProductCard";
 import { PromoPopup } from "@/components/store/Overlays";
-import { images, money, products } from "@/data/store";
+import { images, money } from "@/data/store";
+import { useStore } from "@/context/StoreContext";
+import type { Product } from "@/types/store";
 
 const categories = [
   {
@@ -27,6 +29,7 @@ const categories = [
 ];
 
 export function HomePage() {
+  const { products } = useStore();
   const [look, setLook] = useState<number | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
@@ -292,7 +295,7 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
     </div>
   );
 }
-function ProductSection({ title, products: list }: { title: string; products: typeof products }) {
+function ProductSection({ title, products: list }: { title: string; products: Product[] }) {
   return (
     <section className="mx-auto max-w-7xl px-5 py-10 sm:py-14 md:px-10 md:py-16">
       <SectionTitle eyebrow="THE LATEST EDIT" title={title} />

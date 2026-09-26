@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, ChevronRight, Minus, Plus, Search, X } from "lucide-react";
+import { Check, CheckCircle2, ChevronRight, Minus, Plus, Search, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStore } from "@/context/StoreContext";
 import { money, products } from "@/data/store";
+import { toast } from "sonner";
 
 const Backdrop = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
   <motion.div
@@ -227,14 +228,65 @@ export function CartDrawer() {
 }
 
 export function AccountDrawer() {
-  const { accountOpen, setAccountOpen, login } = useStore();
+  const { accountOpen, setAccountOpen, registerCustomer, loginCustomer } = useStore();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [done, setDone] = useState(false);
-  const submit = (event: FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successModal, setSuccessModal] = useState<{
+    type: "register" | "login";
+    name: string;
+    email: string;
+  } | null>(null);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (mode === "login") login();
-    else setDone(true);
+    setErrorMsg("");
+
+    if (mode === "register") {
+      if (password && confirmPassword && password !== confirmPassword) {
+        setErrorMsg("Passwords do not match");
+        return;
+      }
+      setLoading(true);
+      const res = await registerCustomer({ firstName, lastName, email, phone, password });
+      setLoading(false);
+      if (res.success) {
+        toast.success("Account created successfully! Welcome to ENVIAAR.");
+        setSuccessModal({
+          type: "register",
+          name: res.user?.name || `${firstName} ${lastName}`.trim() || "Valued Customer",
+          email: res.user?.email || email,
+        });
+      } else {
+        setErrorMsg(res.error || "Failed to create account");
+      }
+    } else if (mode === "login") {
+      setLoading(true);
+      const res = await loginCustomer({ email, password });
+      setLoading(false);
+      if (res.success) {
+        toast.success("Welcome back to ENVIAAR!");
+        setSuccessModal({
+          type: "login",
+          name: res.user?.name || email.split("@")[0] || "Valued Customer",
+          email: res.user?.email || email,
+        });
+      } else {
+        setErrorMsg(res.error || "Invalid login credentials");
+      }
+    } else {
+      setDone(true);
+    }
   };
+
   return (
     <AnimatePresence>
       {accountOpen && (
@@ -259,6 +311,13 @@ export function AccountDrawer() {
                   ? "Join ENVIAAR"
                   : "Reset your password"}
             </h2>
+
+            {errorMsg && (
+              <div className="mt-4 rounded border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                {errorMsg}
+              </div>
+            )}
+
             {done ? (
               <div className="mt-12 flex gap-3">
                 <Check /> <p>Thank you. Check your email for the next step.</p>
@@ -267,37 +326,81 @@ export function AccountDrawer() {
               <form onSubmit={submit} className="mt-10 space-y-5">
                 {mode === "register" && (
                   <div className="grid grid-cols-2 gap-4">
-                    <Input required placeholder="First name" />
-                    <Input required placeholder="Last name" />
+                    <Input
+                      required
+                      placeholder="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                    <Input
+                      required
+                      placeholder="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
                   </div>
                 )}
-                <Input type="email" required placeholder="Email address" />
+                <Input
+                  type="email"
+                  required
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
                 {mode === "register" && (
-                  <Input type="tel" required pattern="[0-9]{10}" placeholder="Mobile number" />
+                  <Input
+                    type="tel"
+                    required
+                    placeholder="Mobile number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 )}
                 {mode !== "forgot" && (
-                  <Input type="password" minLength={8} required placeholder="Password" />
+                  <Input
+                    type="password"
+                    minLength={6}
+                    required
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 )}
                 {mode === "register" && (
                   <>
-                    <Input type="password" minLength={8} required placeholder="Confirm password" />
+                    <Input
+                      type="password"
+                      minLength={6}
+                      required
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
                     <label className="flex gap-3 text-sm">
-                      <input type="checkbox" /> Receive new collection and offer updates.
+                      <input type="checkbox" defaultChecked /> Receive new collection and offer updates.
                     </label>
                   </>
                 )}
-                <Button type="submit" variant="luxury" size="lg" className="w-full">
-                  {mode === "login"
-                    ? "Login"
-                    : mode === "register"
-                      ? "Create Account"
-                      : "Send Reset Link"}
+                <Button type="submit" variant="luxury" size="lg" className="w-full" disabled={loading}>
+                  {loading
+                    ? "Processing..."
+                    : mode === "login"
+                      ? "Login"
+                      : mode === "register"
+                        ? "Create Account"
+                        : "Send Reset Link"}
                 </Button>
               </form>
             )}
             {mode === "login" && (
               <>
-                <button className="mt-5 text-sm underline" onClick={() => setMode("forgot")}>
+                <button
+                  className="mt-5 text-sm underline"
+                  onClick={() => {
+                    setMode("forgot");
+                    setErrorMsg("");
+                  }}
+                >
                   Forgot password?
                 </button>
                 <div className="my-8 flex items-center gap-4 text-xs">
@@ -310,7 +413,13 @@ export function AccountDrawer() {
                 </Button>
                 <p className="mt-10 text-center">
                   New to ENVIAAR?{" "}
-                  <button className="underline" onClick={() => setMode("register")}>
+                  <button
+                    className="underline"
+                    onClick={() => {
+                      setMode("register");
+                      setErrorMsg("");
+                    }}
+                  >
                     Create account
                   </button>
                 </p>
@@ -322,6 +431,7 @@ export function AccountDrawer() {
                 onClick={() => {
                   setMode("login");
                   setDone(false);
+                  setErrorMsg("");
                 }}
               >
                 Back to login
@@ -329,6 +439,97 @@ export function AccountDrawer() {
             )}
           </motion.aside>
         </Backdrop>
+      )}
+
+      {successModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-foreground/60 backdrop-blur-sm p-4"
+          onClick={() => {
+            setSuccessModal(null);
+            setAccountOpen(false);
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="w-full max-w-lg bg-background border border-primary/20 p-6 sm:p-8 rounded-none shadow-2xl text-center relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setSuccessModal(null);
+                setAccountOpen(false);
+              }}
+            >
+              <X className="size-5" />
+            </Button>
+
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/30 mb-5">
+              <Sparkles className="size-8" />
+            </div>
+
+            <p className="text-[11px] uppercase tracking-[.25em] text-muted-foreground font-semibold">ENVIAAR MEMBER</p>
+            <h3 className="mt-2 text-3xl font-display text-foreground">
+              {successModal.type === "register" ? "Account Created!" : "Login Successful!"}
+            </h3>
+
+            <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {successModal.type === "register"
+                ? `Welcome to ENVIAAR, ${successModal.name}! Your account has been created successfully.`
+                : `Welcome back, ${successModal.name}! You are now logged in.`}
+            </p>
+
+            <div className="mt-6 rounded-md bg-secondary/40 p-4 text-left text-xs space-y-2 border border-border/60">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Account Holder:</span>
+                <span className="font-semibold text-foreground">{successModal.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Email Address:</span>
+                <span className="font-semibold text-foreground truncate max-w-[200px]">{successModal.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Session Status:</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-3.5" /> Active & Verified
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 w-full">
+              <Button
+                asChild
+                variant="luxury"
+                size="lg"
+                className="w-full text-xs uppercase tracking-wider"
+                onClick={() => {
+                  setSuccessModal(null);
+                  setAccountOpen(false);
+                }}
+              >
+                <Link to="/account">Go to My Profile</Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full text-xs uppercase tracking-wider"
+                onClick={() => {
+                  setSuccessModal(null);
+                  setAccountOpen(false);
+                }}
+              >
+                Continue Shopping
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

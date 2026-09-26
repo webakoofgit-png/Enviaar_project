@@ -4,11 +4,13 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/store/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { collectionInfo, products } from "@/data/store";
+import { collectionInfo } from "@/data/store";
+import { useStore } from "@/context/StoreContext";
 import type { Product } from "@/types/store";
 
 export function CollectionPage({ collection = "shop" }: { collection?: string }) {
   const info = collectionInfo[collection] ?? collectionInfo["shop"]!;
+  const { products } = useStore();
   const [sort, setSort] = useState("featured");
   const [material, setMaterial] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -25,7 +27,7 @@ export function CollectionPage({ collection = "shop" }: { collection?: string })
     if (sort === "high") value.sort((a, b) => b.price - a.price);
     if (sort === "newest") value.reverse();
     return value;
-  }, [collection, material, sort]);
+  }, [collection, material, sort, products]);
   return (
     <div>
       <section className="relative h-[32vh] sm:h-[42vh] min-h-64 sm:min-h-80">

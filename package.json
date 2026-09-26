@@ -4,7 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "client": "vite",
+    "server": "node --watch server/index.js",
+    "dev": "concurrently --names \"CLIENT,SERVER\" --prefix-colors \"cyan,yellow\" \"npm run client\" \"npm run server\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -71,6 +73,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "concurrently": "^10.0.5",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",

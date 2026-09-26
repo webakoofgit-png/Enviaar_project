@@ -38,19 +38,34 @@ const shopLinks = [
   "Baby Jewellery",
 ];
 
+import { getCMSContent } from "@/lib/cmsStorage";
+
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const [mobile, setMobile] = useState(false);
   const [mega, setMega] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [announcementText, setAnnouncementText] = useState(() => getCMSContent().announcementText);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1200);
-    return () => clearTimeout(timer);
+
+    const updateAnnouncement = () => {
+      setAnnouncementText(getCMSContent().announcementText);
+    };
+
+    window.addEventListener("cms-updated", updateAnnouncement);
+    window.addEventListener("storage", updateAnnouncement);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("cms-updated", updateAnnouncement);
+      window.removeEventListener("storage", updateAnnouncement);
+    };
   }, []);
 
-  const { cart, wishlist, setSearchOpen, setAccountOpen, setCartOpen } = useStore();
+  const { cart, wishlist, setSearchOpen, setAccountOpen, setCartOpen, isLoggedIn, user } = useStore();
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -60,9 +75,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <div className="loading-bar" />
       </div>
 
-      <div className="bg-secondary/70 border-b border-border/40 px-4 py-2 text-center text-[10px] uppercase tracking-[.15em] text-foreground">
-        Complimentary Shipping <span className="mx-2">|</span> Easy Shopping{" "}
-        <span className="mx-2">|</span> Premium Jewellery
+      <div className="bg-secondary/70 border-b border-border/40 px-4 py-2 text-center text-[10px] uppercase tracking-[.15em] text-foreground font-medium">
+        {announcementText}
       </div>
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-20 sm:h-24 max-w-[1500px] items-center justify-between px-4 sm:px-8 md:px-12 gap-4">
@@ -110,14 +124,24 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             >
               <Search />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setAccountOpen(true)}
-              aria-label="Account"
-            >
-              <User />
-            </Button>
+            {isLoggedIn ? (
+              <Button asChild variant="ghost" size="icon" aria-label="My Account" title={user?.name || "My Account"}>
+                <Link to="/account" className="relative flex items-center justify-center">
+                  <User className="text-primary" />
+                  <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 ring-2 ring-background" />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAccountOpen(true)}
+                aria-label="Account Login"
+                title="Login / Create Account"
+              >
+                <User />
+              </Button>
+            )}
             <Button asChild variant="ghost" size="icon">
               <Link to="/wishlist" aria-label="Wishlist">
                 <Heart />

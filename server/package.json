@@ -1,0 +1,17 @@
+{
+  "name": "enviaar-backend",
+  "version": "1.0.0",
+  "description": "Express Backend & MySQL API for ENVIAAR Admin Dashboard & Storefront",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.12.0"
+  }
+}

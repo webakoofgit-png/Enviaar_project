@@ -1,3 +1,9 @@
+export type MediaItem = {
+  id: string;
+  url: string;
+  type: "image" | "video";
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -9,9 +15,10 @@ export type Product = {
   price: number;
   image: string;
   alternateImage: string;
-  badge?: "NEW" | "BESTSELLER" | "925 SILVER";
+  media?: MediaItem[] | undefined;
+  badge?: "NEW" | "BESTSELLER" | "925 SILVER" | undefined;
   colors: string[];
-  sizes?: string[];
+  sizes?: string[] | undefined;
   description: string;
   rating: number;
 };

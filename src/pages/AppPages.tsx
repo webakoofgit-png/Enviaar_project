@@ -16,9 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ProductCard } from "@/components/store/ProductCard";
 import { CollectionPage } from "./CollectionPage";
+import { CustomerProfilePage } from "./CustomerProfilePage";
 import { useStore } from "@/context/StoreContext";
-import { collectionInfo, images, money, products } from "@/data/store";
-import type { Product } from "@/types/store";
+import { collectionInfo, images, money } from "@/data/store";
+import type { MediaItem, Product } from "@/types/store";
+import { saveOrder, type CustomerOrder } from "@/lib/orderStorage";
 
 const collectionPaths = new Set([
   "shop",
@@ -106,14 +108,12 @@ export function Collections() {
 }
 
 export function ProductPage({ slug }: { slug: string }) {
-  const product = products.find((p) => p.slug === slug);
-  const { addToCart, toggleWishlist, wishlist } = useStore();
+  const { products, addToCart, toggleWishlist, wishlist } = useStore();
+  const product = products.find((p) => p.slug === slug || p.id === slug);
   const [finish, setFinish] = useState(product?.colors[0] ?? "Gold");
   const [size, setSize] = useState(product?.sizes?.[0]);
   const [quantity, setQuantity] = useState(1);
   const [selected, setSelected] = useState(0);
-  const [pin, setPin] = useState("");
-  const [delivery, setDelivery] = useState("");
   useEffect(() => {
     if (!product) return;
     const current = JSON.parse(localStorage.getItem("enviaar-recent") ?? "[]") as string[];
@@ -123,12 +123,18 @@ export function ProductPage({ slug }: { slug: string }) {
     );
   }, [product]);
   if (!product) return <NotFound />;
-  const gallery = [
-    product.image,
-    product.alternateImage,
-    images.productsEditorial,
-    product.category === "mens" ? images.mens : images.festive,
-  ];
+  const gallery = useMemo(() => {
+    if (product.media && product.media.length > 0) {
+      return product.media;
+    }
+    const items: MediaItem[] = [];
+    if (product.image) items.push({ id: "1", url: product.image, type: "image" });
+    if (product.alternateImage && product.alternateImage !== product.image) {
+      items.push({ id: "2", url: product.alternateImage, type: "image" });
+    }
+    return items;
+  }, [product]);
+
   const add = () => {
     for (let i = 0; i < quantity; i++) addToCart(product, finish, size);
   };
@@ -140,27 +146,39 @@ export function ProductPage({ slug }: { slug: string }) {
       <div className="grid gap-8 sm:gap-10 lg:grid-cols-[3fr_2fr]">
         <div className="grid gap-3 md:grid-cols-[90px_1fr]">
           <div className="order-2 flex gap-2 overflow-x-auto pb-2 md:order-1 md:block md:pb-0">
-            {gallery.map((src, i) => (
+            {gallery.map((item, i) => (
               <button
-                key={i}
+                key={item.id || i}
                 onClick={() => setSelected(i)}
-                className={`mb-3 shrink-0 border ${selected === i ? "border-primary" : "border-transparent"}`}
+                className={`mb-3 shrink-0 border overflow-hidden ${selected === i ? "border-primary" : "border-transparent"}`}
               >
-                <img src={src} alt="" className="h-20 w-16 sm:h-24 sm:w-20 object-cover" />
+                {item.type === "video" ? (
+                  <video src={item.url} className="h-20 w-16 sm:h-24 sm:w-20 object-cover pointer-events-none" muted />
+                ) : (
+                  <img src={item.url} alt="" className="h-20 w-16 sm:h-24 sm:w-20 object-cover" />
+                )}
               </button>
             ))}
           </div>
-          <button
-            className="order-1 cursor-zoom-in overflow-hidden bg-muted md:order-2 aspect-[4/5] w-full"
-            onClick={() => window.open(gallery[selected], "_blank")}
-            title="Open full-size image"
-          >
-            <img
-              src={gallery[selected]}
-              alt={product.name}
-              className="aspect-[4/5] h-full w-full object-cover transition duration-700 hover:scale-105"
-            />
-          </button>
+          <div className="order-1 cursor-pointer overflow-hidden bg-muted md:order-2 aspect-[4/5] w-full">
+            {gallery[selected]?.type === "video" ? (
+              <video
+                src={gallery[selected]?.url}
+                controls
+                autoPlay
+                loop
+                muted
+                className="aspect-[4/5] h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src={gallery[selected]?.url ?? product.image}
+                alt={product.name}
+                onClick={() => window.open(gallery[selected]?.url ?? product.image, "_blank")}
+                className="aspect-[4/5] h-full w-full object-cover transition duration-700 hover:scale-105"
+              />
+            )}
+          </div>
         </div>
         <div className="lg:sticky lg:top-40 lg:self-start">
           <p className="text-xs uppercase tracking-[.16em]">{product.badge ?? product.category}</p>
@@ -196,28 +214,6 @@ export function ProductPage({ slug }: { slug: string }) {
             <Heart size={17} className={wishlist.includes(product.id) ? "fill-current" : ""} />{" "}
             {wishlist.includes(product.id) ? "Saved to wishlist" : "Add to wishlist"}
           </button>
-          <form
-            className="mt-6 sm:mt-8 flex gap-2 border-t pt-6 sm:pt-7"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setDelivery(
-                /^\d{6}$/.test(pin)
-                  ? "Delivery available in 3–5 business days."
-                  : "Enter a valid 6-digit PIN code.",
-              );
-            }}
-          >
-            <Input
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              maxLength={6}
-              placeholder="Enter PIN Code"
-            />
-            <Button type="submit" variant="outline">
-              Check
-            </Button>
-          </form>
-          {delivery && <p className="mt-2 text-sm">{delivery}</p>}
           <div className="mt-6 sm:mt-8 grid grid-cols-3 border-y py-4 sm:py-5 text-center text-[10px] sm:text-[11px]">
             <span>
               <ShieldCheck className="mx-auto mb-2" />
@@ -401,17 +397,74 @@ function SummaryRow({ label, value, text }: { label: string; value?: number; tex
 }
 
 export function CheckoutPage() {
-  const { cart } = useStore();
+  const { cart, user } = useStore();
   const [step, setStep] = useState(0);
-  const [placed, setPlaced] = useState(false);
+  const [placedOrderNumber, setPlacedOrderNumber] = useState("");
+
+  const [email, setEmail] = useState(user?.email || "customer@enviaar.com");
+  const [phone, setPhone] = useState(user?.phone || "+91 98765 43210");
+  const [fullName, setFullName] = useState(user?.name || "Customer User");
+  const [address, setAddress] = useState("402 Royal Palms, Bandra West");
+  const [apartment, setApartment] = useState("Landmark: Near St. Theresa");
+  const [city, setCity] = useState("Mumbai");
+  const [state, setState] = useState("Maharashtra");
+  const [pincode, setPincode] = useState("400050");
+  const [paymentMethod, setPaymentMethod] = useState("UPI (Google Pay)");
+
   const total = cart.reduce((s, x) => s + x.product.price * x.quantity, 0);
-  if (placed)
+
+  const handlePlaceOrder = async () => {
+    const generatedOrderNum = `ENV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullShippingAddr = `${address}${apartment ? `, ${apartment}` : ""}, ${city}, ${state} - ${pincode}`;
+
+    const orderObj: CustomerOrder = {
+      id: `ord_${Date.now()}`,
+      orderNumber: generatedOrderNum,
+      customerName: fullName || "Valued Customer",
+      customerEmail: email || "customer@enviaar.com",
+      customerPhone: phone || "",
+      shippingAddress: fullShippingAddr,
+      paymentMethod: paymentMethod,
+      paymentStatus: (paymentMethod === "Cash on Delivery" || paymentMethod.toLowerCase().includes("cod") || paymentMethod.toLowerCase().includes("cash")) ? "Unpaid" : "Paid",
+      status: "Processing",
+      totalAmount: total > 0 ? total : 7980,
+      items: cart.map((c) => ({
+        id: c.product.id,
+        name: c.product.name,
+        price: c.product.price,
+        quantity: c.quantity,
+        image: c.product.image,
+        finish: c.finish,
+        ...(c.size ? { size: c.size } : {}),
+      })),
+      createdAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+    };
+
+    // Save to localStorage orderStorage
+    saveOrder(orderObj);
+
+    // Save to Express Backend API
+    try {
+      await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderObj),
+      });
+    } catch (err) {
+      console.warn("Backend API offline during order submit, saved to local storage");
+    }
+
+    setPlacedOrderNumber(generatedOrderNum);
+  };
+
+  if (placedOrderNumber)
     return (
       <Success
-        title="Order confirmed"
-        copy="Thank you for choosing ENVIAAR. Your order number is ENV-2026-1042."
+        title="Order confirmed!"
+        copy={`Thank you for choosing ENVIAAR. Your order number is ${placedOrderNumber}. Your order is now visible in the Admin Panel and your Customer Account page.`}
       />
     );
+
   return (
     <>
       <PageHero title="Checkout" eyebrow="SECURE CHECKOUT" />
@@ -424,47 +477,94 @@ export function CheckoutPage() {
               </span>
             ))}
           </div>
-          {step === 0 && <FormGrid fields={["Email Address", "Mobile Number"]} />}{" "}
+
+          {step === 0 && (
+            <div className="grid gap-3.5 sm:gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Email Address</label>
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email Address" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Mobile Phone</label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="Mobile Number" />
+              </div>
+            </div>
+          )}
+
           {step === 1 && (
-            <FormGrid
-              fields={["Full Name", "Address", "Apartment / Landmark", "City", "State", "PIN Code"]}
-            />
-          )}{" "}
+            <div className="grid gap-3.5 sm:gap-4 sm:grid-cols-2">
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">Full Name</label>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Full Name" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">Street Address</label>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} required placeholder="Address" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">Apartment / Landmark</label>
+                <Input value={apartment} onChange={(e) => setApartment(e.target.value)} placeholder="Apartment / Suite / Landmark" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">City</label>
+                <Input value={city} onChange={(e) => setCity(e.target.value)} required placeholder="City" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">State</label>
+                <Input value={state} onChange={(e) => setState(e.target.value)} required placeholder="State" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">PIN Code</label>
+                <Input value={pincode} onChange={(e) => setPincode(e.target.value)} required placeholder="PIN Code" />
+              </div>
+            </div>
+          )}
+
           {step === 2 && (
             <div className="space-y-3">
-              {["UPI", "Credit / Debit Card", "Net Banking", "Wallet", "Cash on Delivery"].map(
-                (x, i) => (
-                  <label key={x} className="flex gap-3 border p-3.5 sm:p-4 text-sm cursor-pointer hover:bg-muted/30">
-                    <input type="radio" name="payment" defaultChecked={i === 0} />
+              {["UPI (Google Pay / PhonePe)", "Credit / Debit Card", "Net Banking", "Store Wallet Credit", "Cash on Delivery"].map(
+                (x) => (
+                  <label key={x} className="flex items-center gap-3 border p-3.5 sm:p-4 text-sm cursor-pointer hover:bg-muted/30 transition">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === x}
+                      onChange={() => setPaymentMethod(x)}
+                    />
                     {x}
                   </label>
                 ),
               )}
-              <p className="text-xs text-muted-foreground">
-                Payment options are UI placeholders for this frontend prototype.
-              </p>
             </div>
           )}
+
           <div className="mt-8 flex justify-between">
             <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>
               Back
             </Button>
             <Button
               variant="luxury"
-              onClick={() => (step < 2 ? setStep(step + 1) : setPlaced(true))}
+              onClick={() => {
+                if (step < 2) {
+                  setStep(step + 1);
+                } else {
+                  handlePlaceOrder();
+                }
+              }}
             >
               {step < 2 ? "Continue" : "Place Order"}
             </Button>
           </div>
         </div>
+
         <aside className="h-fit bg-secondary/35 p-5 sm:p-6">
           <h2 className="text-2xl sm:text-3xl">Your Order</h2>
           {cart.map((x) => (
-            <div key={x.product.id} className="mt-4 sm:mt-5 flex gap-3">
+            <div key={`${x.product.id}-${x.finish}-${x.size}`} className="mt-4 sm:mt-5 flex gap-3">
               <img src={x.product.image} className="h-14 w-12 sm:h-16 sm:w-14 object-cover" />
               <div className="flex-1 text-xs sm:text-sm">
                 <p className="font-medium line-clamp-1">{x.product.name}</p>
-                <p className="text-xs text-muted-foreground">Qty {x.quantity}</p>
+                <p className="text-xs text-muted-foreground">Qty {x.quantity} {x.finish ? `· ${x.finish}` : ""}</p>
               </div>
               <span className="text-xs sm:text-sm font-medium">{money(x.product.price * x.quantity)}</span>
             </div>
@@ -494,7 +594,7 @@ function FormGrid({ fields }: { fields: string[] }) {
 }
 
 export function WishlistPage() {
-  const { wishlist } = useStore();
+  const { products, wishlist } = useStore();
   const list = products.filter((p) => wishlist.includes(p.id));
   return (
     <>
@@ -514,6 +614,7 @@ export function WishlistPage() {
   );
 }
 export function SearchPage() {
+  const { products } = useStore();
   const [searchParams] = useSearchParams();
   const initial = searchParams.get("q") ?? "";
   const [q, setQ] = useState(initial);
@@ -522,7 +623,7 @@ export function SearchPage() {
       products.filter((p) =>
         `${p.name} ${p.category} ${p.material} ${p.finish}`.toLowerCase().includes(q.toLowerCase()),
       ),
-    [q],
+    [q, products],
   );
   return (
     <>
@@ -641,42 +742,7 @@ export function ContactPage() {
 }
 
 export function AccountPage() {
-  const { isLoggedIn, setAccountOpen, logout } = useStore();
-  if (!isLoggedIn)
-    return (
-      <>
-        <PageHero title="Customer Account" />
-        <div className="py-16 sm:py-24 text-center px-4">
-          <p className="text-sm text-muted-foreground">
-            Sign in to view your profile, addresses and orders.
-          </p>
-          <Button className="mt-6 w-full sm:w-auto" variant="luxury" onClick={() => setAccountOpen(true)}>
-            Login / Create Account
-          </Button>
-        </div>
-      </>
-    );
-  return (
-    <>
-      <PageHero title="Welcome Back" />
-      <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 px-4 sm:px-5 py-10 sm:py-16">
-        {["Profile", "Addresses", "Orders", "Wishlist"].map((x) => (
-          <Link
-            key={x}
-            to={x === "Orders" ? "/orders" : x === "Wishlist" ? "/wishlist" : "/account"}
-            className="border p-5 sm:p-8 text-center font-display text-xl sm:text-2xl hover:border-primary transition"
-          >
-            {x}
-          </Link>
-        ))}
-      </div>
-      <div className="pb-16 text-center">
-        <Button variant="outline" onClick={logout}>
-          Logout
-        </Button>
-      </div>
-    </>
-  );
+  return <CustomerProfilePage />;
 }
 export function OrdersPage() {
   return (
