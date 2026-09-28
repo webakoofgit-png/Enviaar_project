@@ -28,6 +28,7 @@ interface Product {
   name: string;
   category: string;
   sku: string;
+  description?: string;
   createdAt: string;
   regularPrice: number;
   sellPrice: number;
@@ -63,6 +64,7 @@ export function AdminProductsPage() {
     name: "",
     category: "Earrings",
     sku: "",
+    description: "",
     regularPrice: "4990.00",
     sellPrice: "4290.00",
     stock: "35",
@@ -75,6 +77,7 @@ export function AdminProductsPage() {
       name: "",
       category: "Earrings",
       sku: "",
+      description: "",
       regularPrice: "4990.00",
       sellPrice: "4290.00",
       stock: "35",
@@ -90,6 +93,7 @@ export function AdminProductsPage() {
       name: product.name,
       category: product.category || "Earrings",
       sku: product.sku || "",
+      description: product.description || "",
       regularPrice: String(product.regularPrice || 0),
       sellPrice: String(product.sellPrice || 0),
       stock: String(product.stock || 0),
@@ -389,7 +393,8 @@ export function AdminProductsPage() {
       badge: isEdit ? (editingProduct as any).badge || "BESTSELLER" : "NEW",
       colors: ["Gold", "Silver"],
       description:
-        "A refined ENVIAAR piece made for effortless transitions from everyday moments to occasions worth remembering.",
+        formData.description ||
+        (isEdit ? (editingProduct as any).description : "A refined ENVIAAR piece made for effortless transitions from everyday moments to occasions worth remembering."),
       rating: 4.8,
     };
 
@@ -401,6 +406,7 @@ export function AdminProductsPage() {
       name: formData.name,
       category: formData.category,
       sku: formData.sku || (isEdit ? editingProduct.sku : `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`),
+      description: formData.description,
       regularPrice: parseFloat(formData.regularPrice) || 0,
       sellPrice: parseFloat(formData.sellPrice) || 0,
       stock: parseInt(formData.stock) || 0,
@@ -877,6 +883,17 @@ export function AdminProductsPage() {
                     <option value="Draft">Draft</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Product Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Enter detailed description of craftsmanship, design, material, and styling tips..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900 leading-relaxed font-sans"
+                />
               </div>
 
               {/* MULTI-MEDIA SELECTION & UPLOADER (Images + Videos) */}

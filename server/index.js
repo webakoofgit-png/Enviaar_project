@@ -496,13 +496,13 @@ app.get('/api/products', async (req, res) => {
 
 // Add Product endpoint
 app.post('/api/products', async (req, res) => {
-  const { name, category, sku, regularPrice, sellPrice, stock, status, image, media } = req.body;
+  const { name, category, sku, regularPrice, sellPrice, stock, status, image, media, description } = req.body;
 
   try {
     const [result] = await pool.query(
-      `INSERT INTO products (name, sku, regular_price, sell_price, stock_quantity, status, image_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`, regularPrice || 0, sellPrice || 0, stock || 0, status || 'Published', image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80']
+      `INSERT INTO products (name, sku, description, regular_price, sell_price, stock_quantity, status, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`, description || null, regularPrice || 0, sellPrice || 0, stock || 0, status || 'Published', image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80']
     );
 
     res.status(201).json({ id: result.insertId, message: 'Product created successfully', media: media || [] });
@@ -513,6 +513,7 @@ app.post('/api/products', async (req, res) => {
       name: name || 'New ENVIAAR Product',
       category: category || 'Fine Jewellery',
       sku: sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`,
+      description: description || 'A refined ENVIAAR piece made for effortless transitions.',
       createdAt: 'Just now',
       regularPrice: regularPrice || 4990.00,
       sellPrice: sellPrice || 4290.00,
@@ -529,12 +530,12 @@ app.post('/api/products', async (req, res) => {
 // Update Product
 app.put('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, sellPrice, stock, status } = req.body;
+  const { name, sellPrice, stock, status, description } = req.body;
 
   try {
     await pool.query(
-      `UPDATE products SET name = COALESCE(?, name), sell_price = COALESCE(?, sell_price), stock_quantity = COALESCE(?, stock_quantity), status = COALESCE(?, status) WHERE id = ?`,
-      [name, sellPrice, stock, status, id]
+      `UPDATE products SET name = COALESCE(?, name), description = COALESCE(?, description), sell_price = COALESCE(?, sell_price), stock_quantity = COALESCE(?, stock_quantity), status = COALESCE(?, status) WHERE id = ?`,
+      [name, description, sellPrice, stock, status, id]
     );
     res.json({ message: 'Product updated successfully' });
   } catch (err) {
@@ -542,6 +543,7 @@ app.put('/api/products/:id', async (req, res) => {
     if (p) {
       if (status) p.status = status;
       if (name) p.name = name;
+      if (description) p.description = description;
       if (sellPrice) p.sellPrice = sellPrice;
       if (stock !== undefined) p.stock = stock;
     }
