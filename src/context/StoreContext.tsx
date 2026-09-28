@@ -133,14 +133,34 @@ export function apiProductToStoreProduct(item: any): Product {
 
 import { getCustomProducts } from "@/lib/productStorage";
 
+export function deduplicateProducts(items: Product[]): Product[] {
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+  const result: Product[] = [];
+
+  for (const item of items) {
+    if (!item || !item.name) continue;
+    const idKey = String(item.id).trim();
+    const nameKey = item.name.toLowerCase().trim();
+
+    if (seenIds.has(idKey) || seenNames.has(nameKey)) {
+      continue;
+    }
+
+    seenIds.add(idKey);
+    seenNames.add(nameKey);
+    result.push(item);
+  }
+
+  return result;
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [productList, setProductList] = useState<Product[]>(() => {
     const custom = getCustomProducts();
-    const customIds = new Set(custom.map((p) => String(p.id)));
-    const filteredInitial = initialProducts.filter((p) => !customIds.has(String(p.id)));
-    return [...custom, ...filteredInitial];
+    return deduplicateProducts([...custom, ...initialProducts]);
   });
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -170,14 +190,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.warn("Backend API not reachable for storefront, using local custom products and fallback catalog");
       }
 
-      // Combine custom products created via Admin, API products, and initial static products
-      const customIds = new Set(customProducts.map((p) => String(p.id)));
-      const apiFiltered = convertedApi.filter((p) => !customIds.has(String(p.id)));
-
-      const combinedIds = new Set([...customProducts.map((p) => String(p.id)), ...apiFiltered.map((p) => String(p.id))]);
-      const initialFiltered = initialProducts.filter((p) => !combinedIds.has(String(p.id)));
-
-      setProductList([...customProducts, ...apiFiltered, ...initialFiltered]);
+      // Combine custom products created via Admin, API products, and initial static products with strict deduplication
+      const allMerged = deduplicateProducts([...customProducts, ...convertedApi, ...initialProducts]);
+      setProductList(allMerged);
     } finally {
       setLoadingProducts(false);
     }

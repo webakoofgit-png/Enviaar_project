@@ -201,9 +201,16 @@ export function AdminProductsPage() {
         const res = await fetch(url.toString());
         if (res.ok) {
           const data = await res.json();
-          const apiIds = new Set(data.map((d: any) => String(d.id)));
-          const filteredCustom = customItems.filter((c: Product) => !apiIds.has(String(c.id)));
-          setProducts([...filteredCustom, ...data]);
+          const seen = new Set<string>();
+          const unique: Product[] = [];
+          for (const item of [...customItems, ...(Array.isArray(data) ? data : [])]) {
+            const key = (item.name || "").toLowerCase().trim();
+            if (key && !seen.has(key)) {
+              seen.add(key);
+              unique.push(item);
+            }
+          }
+          setProducts(unique);
           return;
         }
       } catch (e) {

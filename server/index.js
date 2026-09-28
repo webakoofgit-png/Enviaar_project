@@ -496,7 +496,7 @@ app.get('/api/products', async (req, res) => {
 
 // Add Product endpoint
 app.post('/api/products', async (req, res) => {
-  const { name, category, sku, regularPrice, sellPrice, stock, status, image, media, description } = req.body;
+  const { id, name, category, sku, regularPrice, sellPrice, stock, status, image, media, description } = req.body;
 
   try {
     const [result] = await pool.query(
@@ -507,7 +507,7 @@ app.post('/api/products', async (req, res) => {
 
     res.status(201).json({ id: result.insertId, message: 'Product created successfully', media: media || [] });
   } catch (err) {
-    const newId = mockProducts.length + 1;
+    const newId = id || Date.now();
     const newProduct = {
       id: newId,
       name: name || 'New ENVIAAR Product',
@@ -522,7 +522,14 @@ app.post('/api/products', async (req, res) => {
       image: image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80',
       media: media || (image ? [{ id: '1', url: image, type: 'image' }] : [])
     };
-    mockProducts.unshift(newProduct);
+
+    const existingIndex = mockProducts.findIndex(p => String(p.id) === String(newId) || p.name.toLowerCase().trim() === newProduct.name.toLowerCase().trim());
+    if (existingIndex >= 0) {
+      mockProducts[existingIndex] = { ...mockProducts[existingIndex], ...newProduct };
+    } else {
+      mockProducts.unshift(newProduct);
+    }
+
     res.status(201).json(newProduct);
   }
 });
