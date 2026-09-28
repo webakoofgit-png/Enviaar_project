@@ -167,6 +167,61 @@ app.post('/api/admin/login', async (req, res) => {
   res.status(401).json({ error: 'Invalid admin credentials' });
 });
 
+const mockUserProfilesMap = new Map();
+
+async function ensureCustomerTableColumns() {
+  try {
+    await pool.query(`ALTER TABLE customers ADD COLUMN gender VARCHAR(20) DEFAULT NULL`);
+  } catch (e) {}
+  try {
+    await pool.query(`ALTER TABLE customers ADD COLUMN birthday VARCHAR(50) DEFAULT NULL`);
+  } catch (e) {}
+  try {
+    await pool.query(`ALTER TABLE customers ADD COLUMN anniversary VARCHAR(50) DEFAULT NULL`);
+  } catch (e) {}
+}
+ensureCustomerTableColumns().catch(() => {});
+
+// Customer Profile Update Endpoint
+app.put('/api/auth/profile', async (req, res) => {
+  const { email, name, phone, gender, birthday, anniversary } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email address is required.' });
+  }
+
+  const emailKey = email.toLowerCase().trim();
+  const existing = mockUserProfilesMap.get(emailKey) || {};
+  const updatedUser = {
+    ...existing,
+    id: existing.id || Date.now(),
+    email,
+    name: name !== undefined ? name : existing.name,
+    phone: phone !== undefined ? phone : existing.phone,
+    gender: gender !== undefined ? gender : existing.gender,
+    birthday: birthday !== undefined ? birthday : existing.birthday,
+    anniversary: anniversary !== undefined ? anniversary : existing.anniversary,
+  };
+
+  mockUserProfilesMap.set(emailKey, updatedUser);
+
+  try {
+    await pool.query(
+      `UPDATE customers SET 
+        name = COALESCE(?, name), 
+        phone = COALESCE(?, phone), 
+        gender = COALESCE(?, gender), 
+        birthday = COALESCE(?, birthday), 
+        anniversary = COALESCE(?, anniversary) 
+       WHERE LOWER(email) = ?`,
+      [name || null, phone || null, gender || null, birthday || null, anniversary || null, emailKey]
+    );
+  } catch (err) {
+    console.warn('DB customer profile update fallback:', err.message);
+  }
+
+  return res.json({ success: true, user: updatedUser });
+});
+
 // Customer Registration Endpoint
 app.post('/api/auth/register', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
@@ -176,8 +231,10 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ error: 'Email address is required.' });
   }
 
+  const emailKey = email.toLowerCase().trim();
+
   try {
-    const [existing] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    const [existing] = await pool.query('SELECT * FROM customers WHERE LOWER(email) = ?', [emailKey]);
     if (existing.length > 0) {
       return res.status(400).json({ error: 'An account with this email address already exists.' });
     }
@@ -189,10 +246,12 @@ app.post('/api/auth/register', async (req, res) => {
     );
 
     const user = { id: result.insertId, name: fullName, email, phone: phone || '' };
+    mockUserProfilesMap.set(emailKey, user);
     return res.status(201).json({ success: true, message: 'Account created successfully in database', user });
   } catch (err) {
     console.warn('DB customer registration fallback used:', err.message);
     const mockUser = { id: Date.now(), name: fullName, email, phone: phone || '' };
+    mockUserProfilesMap.set(emailKey, mockUser);
     return res.status(201).json({ success: true, message: 'Account created successfully', user: mockUser });
   }
 });
@@ -205,15 +264,25 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ error: 'Email address is required.' });
   }
 
+  const emailKey = email.toLowerCase().trim();
+  const mockProfile = mockUserProfilesMap.get(emailKey);
+
   try {
-    const [rows] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    const [rows] = await pool.query('SELECT * FROM customers WHERE LOWER(email) = ?', [emailKey]);
     if (rows.length > 0) {
       const customer = rows[0];
       if (!customer.password_hash || customer.password_hash === password) {
-        return res.json({
-          success: true,
-          user: { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone || '' }
-        });
+        const user = {
+          id: customer.id,
+          name: mockProfile?.name || customer.name,
+          email: customer.email,
+          phone: mockProfile?.phone || customer.phone || '',
+          gender: mockProfile?.gender || customer.gender || '',
+          birthday: mockProfile?.birthday || customer.birthday || '',
+          anniversary: mockProfile?.anniversary || customer.anniversary || '',
+        };
+        mockUserProfilesMap.set(emailKey, user);
+        return res.json({ success: true, user });
       } else {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
@@ -222,9 +291,18 @@ app.post('/api/auth/login', async (req, res) => {
     console.warn('DB customer login check fallback used');
   }
 
+  const user = mockProfile || {
+    id: Date.now(),
+    name: email.split('@')[0] || 'Customer',
+    email,
+    phone: '',
+  };
+
+  mockUserProfilesMap.set(emailKey, user);
+
   return res.json({
     success: true,
-    user: { id: Date.now(), name: email.split('@')[0] || 'Customer', email, phone: '' }
+    user
   });
 });
 

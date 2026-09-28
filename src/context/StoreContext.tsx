@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { CartItem, MediaItem, Product } from "@/types/store";
 import { products as initialProducts } from "@/data/store";
+import { getSavedUserProfile, saveUserProfile } from "@/lib/userStorage";
 
 export type CustomerUser = {
   id?: string | number | undefined;
@@ -231,9 +232,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setWishlist((items) =>
       items.includes(id) ? items.filter((item) => item !== id) : [...items, id],
     );
+
   const login = (userData?: CustomerUser) => {
     setIsLoggedIn(true);
-    if (userData) {
+    if (userData && userData.email) {
+      const savedProfile = getSavedUserProfile(userData.email);
+      const mergedUser: CustomerUser = {
+        ...(savedProfile || {}),
+        ...userData,
+      };
+      saveUserProfile(mergedUser);
+      setUser(mergedUser);
+      localStorage.setItem("enviaar-customer-user", JSON.stringify(mergedUser));
+    } else if (userData) {
       setUser(userData);
       localStorage.setItem("enviaar-customer-user", JSON.stringify(userData));
     }
@@ -250,7 +261,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateUserProfile = (data: Partial<CustomerUser>) => {
     setUser((prev) => {
       const updated = { ...(prev || {}), ...data };
+      if (updated.email) {
+        saveUserProfile(updated);
+      }
       localStorage.setItem("enviaar-customer-user", JSON.stringify(updated));
+
+      // Sync to Express backend API
+      fetch("http://localhost:5000/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      }).catch((err) => console.warn("Backend profile sync notice:", err.message));
+
       return updated;
     });
   };
