@@ -51,13 +51,14 @@ export function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageMode, setImageMode] = useState<"file" | "url">("file");
 
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [urlInput, setUrlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state for adding new jewellery product
+  // Form state for adding/editing jewellery product
   const [formData, setFormData] = useState({
     name: "",
     category: "Earrings",
@@ -67,6 +68,51 @@ export function AdminProductsPage() {
     stock: "35",
     status: "Published",
   });
+
+  const handleOpenAddModal = () => {
+    setEditingProduct(null);
+    setFormData({
+      name: "",
+      category: "Earrings",
+      sku: "",
+      regularPrice: "4990.00",
+      sellPrice: "4290.00",
+      stock: "35",
+      status: "Published",
+    });
+    setMediaItems([]);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      category: product.category || "Earrings",
+      sku: product.sku || "",
+      regularPrice: String(product.regularPrice || 0),
+      sellPrice: String(product.sellPrice || 0),
+      stock: String(product.stock || 0),
+      status: product.status || "Published",
+    });
+
+    if (product.media && product.media.length > 0) {
+      setMediaItems(product.media);
+    } else if (product.image) {
+      setMediaItems([
+        {
+          id: "1",
+          type: "image",
+          url: product.image,
+          name: product.name,
+        },
+      ]);
+    } else {
+      setMediaItems([]);
+    }
+
+    setIsAddModalOpen(true);
+  };
 
   // Handle local multiple media files upload (Images + Videos)
   const handleMediaFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -315,16 +361,21 @@ export function AdminProductsPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const primaryImage =
-      mediaItems[0]?.url || "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80";
-
-    const newId = Date.now();
-    const rawName = formData.name || "New Jewellery Piece";
+    const isEdit = !!editingProduct;
+    const productId = isEdit ? editingProduct.id : Date.now();
+    const rawName = formData.name || "Jewellery Piece";
     const categorySlug = normalizeCategory(formData.category);
-    const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + `-${newId}`;
+    const slug = isEdit && (editingProduct as any).slug
+      ? (editingProduct as any).slug
+      : rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + `-${productId}`;
+
+    const primaryImage =
+      mediaItems.find((m) => m.type === "image")?.url ||
+      mediaItems[0]?.url ||
+      (isEdit ? editingProduct.image : "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&q=80");
 
     const storeProduct: StoreProduct = {
-      id: String(newId),
+      id: String(productId),
       slug,
       name: rawName,
       category: categorySlug,
@@ -335,7 +386,7 @@ export function AdminProductsPage() {
       image: primaryImage,
       alternateImage: mediaItems[1]?.url || primaryImage,
       media: mediaItems,
-      badge: "NEW",
+      badge: isEdit ? (editingProduct as any).badge || "BESTSELLER" : "NEW",
       colors: ["Gold", "Silver"],
       description:
         "A refined ENVIAAR piece made for effortless transitions from everyday moments to occasions worth remembering.",
@@ -346,10 +397,10 @@ export function AdminProductsPage() {
     saveCustomProduct(storeProduct);
 
     const productPayload = {
-      id: newId,
+      id: productId,
       name: formData.name,
       category: formData.category,
-      sku: formData.sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`,
+      sku: formData.sku || (isEdit ? editingProduct.sku : `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`),
       regularPrice: parseFloat(formData.regularPrice) || 0,
       sellPrice: parseFloat(formData.sellPrice) || 0,
       stock: parseInt(formData.stock) || 0,
@@ -359,16 +410,26 @@ export function AdminProductsPage() {
     };
 
     try {
-      await fetch("http://localhost:5000/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(productPayload),
-      });
-      toast.success("Jewellery piece created successfully!");
+      if (isEdit) {
+        await fetch(`http://localhost:5000/api/products/${productId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productPayload),
+        });
+        toast.success("Jewellery details updated successfully!");
+      } else {
+        await fetch("http://localhost:5000/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productPayload),
+        });
+        toast.success("Jewellery piece created successfully!");
+      }
     } catch (err) {
-      toast.success("Jewellery piece added to catalogue!");
+      toast.success(isEdit ? "Product catalogue updated!" : "Jewellery piece added to catalogue!");
     } finally {
       setIsAddModalOpen(false);
+      setEditingProduct(null);
       setMediaItems([]);
       fetchProducts();
       window.dispatchEvent(new Event("enviaar_products_updated"));
@@ -447,7 +508,7 @@ export function AdminProductsPage() {
             Export
           </button>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition shadow-sm cursor-pointer"
           >
             <Plus className="h-4 w-4 text-amber-300" />
@@ -584,6 +645,7 @@ export function AdminProductsPage() {
                 <th className="p-3 font-semibold">Price</th>
                 <th className="p-3 font-semibold">Stock</th>
                 <th className="p-3 font-semibold">Status</th>
+                <th className="p-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -638,6 +700,18 @@ export function AdminProductsPage() {
                     </td>
 
                     <td className="p-3">{renderStatusBadge(product.status)}</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(product);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 rounded-xl transition cursor-pointer shadow-xs"
+                      >
+                        <Edit2 className="h-3.5 w-3.5 text-amber-600" />
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -660,7 +734,17 @@ export function AdminProductsPage() {
             Export
           </button>
 
-          <button className="flex items-center gap-1.5 text-xs font-semibold hover:text-amber-300 transition">
+          <button
+            onClick={() => {
+              const selectedProduct = products.find((p) => selectedIds.includes(p.id));
+              if (selectedProduct) {
+                handleOpenEditModal(selectedProduct);
+              } else {
+                toast.error("Please select a product to edit");
+              }
+            }}
+            className="flex items-center gap-1.5 text-xs font-semibold hover:text-amber-300 transition cursor-pointer"
+          >
             <Edit2 className="h-3.5 w-3.5" />
             Edit Info
           </button>
@@ -688,8 +772,14 @@ export function AdminProductsPage() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Add New Jewellery Piece</h2>
-                <p className="text-xs text-slate-400">Add details, multiple images, and product showcase videos</p>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {editingProduct ? "Edit Jewellery Details" : "Add New Jewellery Piece"}
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {editingProduct
+                    ? "Update details, prices, stock, images, and showcase videos"
+                    : "Add details, multiple images, and product showcase videos"}
+                </p>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -977,7 +1067,7 @@ export function AdminProductsPage() {
                   type="submit"
                   className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-sm cursor-pointer"
                 >
-                  Save Piece
+                  {editingProduct ? "Save & Update Product" : "Publish to Store"}
                 </button>
               </div>
             </form>
