@@ -19,7 +19,21 @@ export function saveCustomProduct(product: Product): Product[] {
     const current = getCustomProducts();
     const filtered = current.filter((p) => String(p.id) !== String(product.id));
     const updated = [product, ...filtered];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (quotaErr) {
+      const trimmed = updated.map((p, idx) =>
+        idx === 0
+          ? p
+          : {
+              ...p,
+              media: undefined,
+              alternateImage:
+                p.alternateImage && p.alternateImage.startsWith("data:") ? "" : p.alternateImage,
+            },
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    }
     return updated;
   } catch (err) {
     console.error("Failed to save custom product to localStorage", err);

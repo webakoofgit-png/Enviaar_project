@@ -216,11 +216,100 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) localStorage.setItem("enviaar-cart", JSON.stringify(cart));
+    if (!ready) return;
+    try {
+      const lightweightCart = cart.map((item) => {
+        if (!item || !item.product) return item;
+        const p = item.product;
+        return {
+          ...item,
+          product: {
+            id: p.id,
+            slug: p.slug,
+            name: p.name,
+            category: p.category,
+            subcategory: p.subcategory,
+            material: p.material,
+            finish: p.finish,
+            price: p.price,
+            image: p.image && p.image.length > 5000 ? "" : p.image,
+            alternateImage: p.alternateImage && p.alternateImage.length > 5000 ? "" : p.alternateImage,
+            media: undefined,
+            colors: p.colors,
+            sizes: p.sizes,
+            description: p.description,
+            rating: p.rating,
+          },
+        };
+      });
+
+      try {
+        localStorage.setItem("enviaar-cart", JSON.stringify(lightweightCart));
+      } catch (quotaError) {
+        const minimalCart = cart.map((item) => {
+          if (!item || !item.product) return item;
+          const p = item.product;
+          return {
+            ...item,
+            product: {
+              id: p.id,
+              slug: p.slug,
+              name: p.name,
+              category: p.category,
+              subcategory: p.subcategory,
+              material: p.material,
+              finish: p.finish,
+              price: p.price,
+              image: p.image && p.image.startsWith("data:") ? "" : p.image,
+              alternateImage: "",
+              colors: p.colors,
+              sizes: p.sizes,
+              description: p.description,
+              rating: p.rating,
+            },
+          };
+        });
+        localStorage.setItem("enviaar-cart", JSON.stringify(minimalCart));
+      }
+    } catch (err) {
+      console.warn("Unable to save cart to localStorage (storage full):", err);
+    }
   }, [cart, ready]);
+
   useEffect(() => {
-    if (ready) localStorage.setItem("enviaar-wishlist", JSON.stringify(wishlist));
+    if (!ready) return;
+    try {
+      localStorage.setItem("enviaar-wishlist", JSON.stringify(wishlist));
+    } catch (err) {
+      console.warn("Unable to save wishlist to localStorage:", err);
+    }
   }, [wishlist, ready]);
+
+  useEffect(() => {
+    if (!ready || productList.length === 0 || cart.length === 0) return;
+    let needsUpdate = false;
+    const rehydrated = cart.map((item) => {
+      if (!item?.product) return item;
+      const full = productList.find(
+        (p) => String(p.id) === String(item.product.id) || p.slug === item.product.slug,
+      );
+      if (full && (!item.product.image || item.product.image === "")) {
+        needsUpdate = true;
+        return {
+          ...item,
+          product: {
+            ...full,
+            ...item.product,
+            image: full.image || item.product.image,
+          },
+        };
+      }
+      return item;
+    });
+    if (needsUpdate) {
+      setCart(rehydrated);
+    }
+  }, [productList, ready]);
 
   const addToCart = (
     product: Product,
