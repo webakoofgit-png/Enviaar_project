@@ -24,13 +24,13 @@ export function ProductCard({
             src={product.image}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03] group-hover:opacity-0"
+            className="h-full w-full object-contain p-2 transition duration-700 group-hover:scale-[1.03] group-hover:opacity-0"
           />
           <img
-            src={product.alternateImage}
+            src={product.alternateImage || product.image}
             alt=""
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover opacity-0 transition duration-700 group-hover:scale-[1.03] group-hover:opacity-100"
+            className="absolute inset-0 h-full w-full object-contain p-2 opacity-0 transition duration-700 group-hover:scale-[1.03] group-hover:opacity-100"
           />
         </Link>
         {product.badge && (

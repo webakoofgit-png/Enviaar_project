@@ -169,7 +169,7 @@ export function CartDrawer() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-28 w-24 object-cover"
+                      className="h-28 w-24 object-contain p-1 border rounded"
                     />
                     <div className="flex-1">
                       <p className="font-display text-lg">{product.name}</p>

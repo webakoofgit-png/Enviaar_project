@@ -175,7 +175,7 @@ export function ProductPage({ slug }: { slug: string }) {
                 src={gallery[selected]?.url ?? product.image}
                 alt={product.name}
                 onClick={() => window.open(gallery[selected]?.url ?? product.image, "_blank")}
-                className="aspect-[4/5] h-full w-full object-cover transition duration-700 hover:scale-105"
+                className="aspect-[4/5] h-full w-full object-contain p-2 transition duration-700 hover:scale-105"
               />
             )}
           </div>
