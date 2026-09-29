@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Check,
   ChevronDown,
@@ -108,12 +108,20 @@ export function Collections() {
 }
 
 export function ProductPage({ slug }: { slug: string }) {
+  const navigate = useNavigate();
   const { products, addToCart, toggleWishlist, wishlist } = useStore();
-  const product = products.find((p) => p.slug === slug || p.id === slug);
-  const [finish, setFinish] = useState(product?.colors[0] ?? "Gold");
+  const product = products.find((p) => p.slug === slug || String(p.id) === String(slug));
+  const [finish, setFinish] = useState(product?.colors?.[0] ?? product?.finish ?? "Gold");
   const [size, setSize] = useState(product?.sizes?.[0]);
   const [quantity, setQuantity] = useState(1);
   const [selected, setSelected] = useState(0);
+
+  useEffect(() => {
+    if (product?.colors && product.colors.length > 0 && product.colors[0] && !finish) {
+      setFinish(product.colors[0]);
+    }
+  }, [product]);
+
   useEffect(() => {
     if (!product) return;
     const current = JSON.parse(localStorage.getItem("enviaar-recent") ?? "[]") as string[];
@@ -122,7 +130,9 @@ export function ProductPage({ slug }: { slug: string }) {
       JSON.stringify([product.id, ...current.filter((id) => id !== product.id)].slice(0, 6)),
     );
   }, [product]);
+
   if (!product) return <NotFound />;
+
   const gallery = useMemo(() => {
     if (product.media && product.media.length > 0) {
       return product.media;
@@ -136,7 +146,16 @@ export function ProductPage({ slug }: { slug: string }) {
   }, [product]);
 
   const add = () => {
-    for (let i = 0; i < quantity; i++) addToCart(product, finish, size);
+    if (product) {
+      addToCart(product, finish || product.finish || "Gold", size, quantity);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (product) {
+      addToCart(product, finish || product.finish || "Gold", size, quantity);
+      navigate("/checkout");
+    }
   };
   return (
     <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 md:px-10">
@@ -204,8 +223,8 @@ export function ProductPage({ slug }: { slug: string }) {
           <Button variant="luxury" size="lg" className="mt-4 w-full" onClick={add}>
             Add to Bag
           </Button>
-          <Button variant="luxury-outline" size="lg" className="mt-3 w-full" asChild>
-            <Link to="/checkout">Buy It Now</Link>
+          <Button variant="luxury-outline" size="lg" className="mt-3 w-full" onClick={handleBuyNow}>
+            Buy It Now
           </Button>
           <button
             className="mt-5 flex items-center gap-2 text-sm"
@@ -411,7 +430,7 @@ export function CheckoutPage() {
   const [pincode, setPincode] = useState("400050");
   const [paymentMethod, setPaymentMethod] = useState("UPI (Google Pay)");
 
-  const total = cart.reduce((s, x) => s + x.product.price * x.quantity, 0);
+  const total = cart.reduce((s, x) => s + (Number(x?.product?.price) || 0) * (x?.quantity || 1), 0);
 
   const handlePlaceOrder = async () => {
     const generatedOrderNum = `ENV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -559,16 +578,21 @@ export function CheckoutPage() {
 
         <aside className="h-fit bg-secondary/35 p-5 sm:p-6">
           <h2 className="text-2xl sm:text-3xl">Your Order</h2>
-          {cart.map((x) => (
-            <div key={`${x.product.id}-${x.finish}-${x.size}`} className="mt-4 sm:mt-5 flex gap-3">
-              <img src={x.product.image} className="h-14 w-12 sm:h-16 sm:w-14 object-cover" />
-              <div className="flex-1 text-xs sm:text-sm">
-                <p className="font-medium line-clamp-1">{x.product.name}</p>
-                <p className="text-xs text-muted-foreground">Qty {x.quantity} {x.finish ? `· ${x.finish}` : ""}</p>
+          {cart.map((x, idx) => {
+            if (!x?.product) return null;
+            const price = Number(x.product.price) || 0;
+            const itemKey = `${x.product.id || idx}-${x.finish || ""}-${x.size || ""}`;
+            return (
+              <div key={itemKey} className="mt-4 sm:mt-5 flex gap-3">
+                <img src={x.product.image} className="h-14 w-12 sm:h-16 sm:w-14 object-contain p-1 border rounded" />
+                <div className="flex-1 text-xs sm:text-sm">
+                  <p className="font-medium line-clamp-1">{x.product.name}</p>
+                  <p className="text-xs text-muted-foreground">Qty {x.quantity} {x.finish ? `· ${x.finish}` : ""}</p>
+                </div>
+                <span className="text-xs sm:text-sm font-medium">{money(price * x.quantity)}</span>
               </div>
-              <span className="text-xs sm:text-sm font-medium">{money(x.product.price * x.quantity)}</span>
-            </div>
-          ))}
+            );
+          })}
           <div className="mt-6 flex justify-between border-t pt-4 sm:pt-5 text-sm sm:text-base">
             <strong>Total</strong>
             <strong>{money(total)}</strong>

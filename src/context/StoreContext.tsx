@@ -26,7 +26,7 @@ type StoreState = {
   setCartOpen: (value: boolean) => void;
   setSearchOpen: (value: boolean) => void;
   setAccountOpen: (value: boolean) => void;
-  addToCart: (product: Product, finish?: string, size?: string) => void;
+  addToCart: (product: Product, finish?: string, size?: string, qty?: number) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeFromCart: (id: string) => void;
   toggleWishlist: (id: string) => void;
@@ -222,27 +222,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (ready) localStorage.setItem("enviaar-wishlist", JSON.stringify(wishlist));
   }, [wishlist, ready]);
 
-  const addToCart = (product: Product, finish = product.finish, size?: string) => {
+  const addToCart = (
+    product: Product,
+    finish = product?.finish || "Gold",
+    size?: string,
+    qty = 1,
+  ) => {
+    if (!product || !product.id) return;
+    const itemFinish = finish || product.finish || "Gold";
+    const addQty = Math.max(1, qty || 1);
     setCart((current) => {
       const found = current.find(
-        (item) => item.product.id === product.id && item.finish === finish && item.size === size,
+        (item) =>
+          item?.product?.id === product.id && item.finish === itemFinish && item.size === size,
       );
       if (found)
         return current.map((item) =>
-          item === found ? { ...item, quantity: item.quantity + 1 } : item,
+          item === found ? { ...item, quantity: item.quantity + addQty } : item,
         );
-      return [...current, { product, quantity: 1, finish, size }];
+      return [...current, { product, quantity: addQty, finish: itemFinish, size }];
     });
     setCartOpen(true);
   };
   const updateQuantity = (id: string, quantity: number) =>
     setCart((items) =>
       items.map((item) =>
-        item.product.id === id ? { ...item, quantity: Math.max(1, quantity) } : item,
+        item.product?.id === id ? { ...item, quantity: Math.max(1, quantity) } : item,
       ),
     );
   const removeFromCart = (id: string) =>
-    setCart((items) => items.filter((item) => item.product.id !== id));
+    setCart((items) => items.filter((item) => item.product?.id !== id));
   const toggleWishlist = (id: string) =>
     setWishlist((items) =>
       items.includes(id) ? items.filter((item) => item !== id) : [...items, id],

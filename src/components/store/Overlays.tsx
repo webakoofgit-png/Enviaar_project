@@ -119,7 +119,10 @@ export function SearchOverlay() {
 
 export function CartDrawer() {
   const { cartOpen, setCartOpen, cart, updateQuantity, removeFromCart } = useStore();
-  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = cart.reduce(
+    (sum, item) => sum + (Number(item?.product?.price) || 0) * (item?.quantity || 1),
+    0,
+  );
   const remaining = Math.max(0, 5000 - subtotal);
   return (
     <AnimatePresence>
@@ -164,46 +167,55 @@ export function CartDrawer() {
                   </Button>
                 </div>
               ) : (
-                cart.map(({ product, quantity, finish, size }) => (
-                  <div key={`${product.id}-${finish}-${size}`} className="flex gap-4 border-b py-4">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-28 w-24 object-contain p-1 border rounded"
-                    />
-                    <div className="flex-1">
-                      <p className="font-display text-lg">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {finish}
-                        {size ? ` · ${size}` : ""}
-                      </p>
-                      <div className="mt-4 flex w-24 items-center justify-between border">
+                cart.map(({ product, quantity, finish, size }, index) => {
+                  if (!product) return null;
+                  const itemPrice = Number(product.price) || 0;
+                  const itemFinish = finish || product.finish || "Gold";
+                  const itemKey = `${product.id || index}-${itemFinish}-${size || ""}`;
+                  return (
+                    <div key={itemKey} className="flex gap-4 border-b py-4">
+                      <img
+                        src={
+                          product.image ||
+                          "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=800&q=80"
+                        }
+                        alt={product.name || "Product"}
+                        className="h-28 w-24 object-contain p-1 border rounded"
+                      />
+                      <div className="flex-1">
+                        <p className="font-display text-lg">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {itemFinish}
+                          {size ? ` · ${size}` : ""}
+                        </p>
+                        <div className="mt-4 flex w-24 items-center justify-between border">
+                          <button
+                            className="p-2"
+                            onClick={() => updateQuantity(product.id, (quantity || 1) - 1)}
+                          >
+                            <Minus size={13} />
+                          </button>
+                          <span>{quantity || 1}</span>
+                          <button
+                            className="p-2"
+                            onClick={() => updateQuantity(product.id, (quantity || 1) + 1)}
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p>{money(itemPrice * (quantity || 1))}</p>
                         <button
-                          className="p-2"
-                          onClick={() => updateQuantity(product.id, quantity - 1)}
+                          className="mt-12 text-xs underline"
+                          onClick={() => removeFromCart(product.id)}
                         >
-                          <Minus size={13} />
-                        </button>
-                        <span>{quantity}</span>
-                        <button
-                          className="p-2"
-                          onClick={() => updateQuantity(product.id, quantity + 1)}
-                        >
-                          <Plus size={13} />
+                          Remove
                         </button>
                       </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <p>{money(product.price * quantity)}</p>
-                      <button
-                        className="mt-12 text-xs underline"
-                        onClick={() => removeFromCart(product.id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             <div className="border-t pt-5">

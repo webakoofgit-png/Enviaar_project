@@ -230,4 +230,7 @@ export const collectionInfo: Record<string, { title: string; copy: string; image
   },
 };
 
-export const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
+export const money = (value: number) => {
+  const num = Number(value) || 0;
+  return `₹${num.toLocaleString("en-IN")}`;
+};
