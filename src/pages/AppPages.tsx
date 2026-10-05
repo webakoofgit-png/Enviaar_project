@@ -676,27 +676,30 @@ export function AboutPage() {
   return (
     <>
       <PageHero
-        eyebrow="OUR STORY"
-        title="Jewellery for Every Version of You."
-        copy="An independent jewellery label creating modern keepsakes for the everyday and the unforgettable."
+        eyebrow="TIMELESS HERITAGE"
+        title="Crafted for Positivity, Made for Prosperity."
+        copy="Enviaar offers exquisite demi-fine jewellery created for a confident YOU. An absolute affordable luxury at your fingertips."
       />
       {[
         [
           images.hero,
-          "Our Story",
-          "ENVIAAR began with a simple idea: jewellery should move with your life—not wait for an occasion.",
+          "Celebrate Yourself Every Day",
+          "Enviaar offers exquisite demi-fine jewellery for a confident YOU. Enviaar focuses on delivering unique pieces—not just for an occasion, but for you to make everyday an occasion to celebrate yourself.",
+          "THE ENVIAAR PHILOSOPHY",
         ],
         [
           images.productsEditorial,
-          "Materials & Craft",
-          "From selected sterling silver to thoughtful gold and rhodium finishes, every detail is considered.",
+          "Moissanite & Freshwater Pearls",
+          "Enviaar jewellery is crafted using beautiful moissanite diamonds for a long-lasting and durable shining stone. Our collection also offers beautiful colored freshwater pearls to add elegance and statement.",
+          "EXQUISITE CRAFTSMANSHIP",
         ],
         [
           images.festive,
-          "Everyday to Occasion",
-          "Quiet essentials and expressive statements, designed to feel naturally yours.",
+          "Affordable Luxury at Your Fingertip",
+          "We believe premium demi-fine craftsmanship should be accessible without compromise. Every piece blends timeless heritage with modern durability, empowering your style effortlessly from morning to midnight.",
+          "THE ENVIAAR PROMISE",
         ],
-      ].map(([img, title, copy], i) => (
+      ].map(([img, title, copy, eyebrow], i) => (
         <section key={title} className="grid md:grid-cols-2">
           <img
             src={img}
@@ -705,13 +708,23 @@ export function AboutPage() {
           />
           <div className="flex items-center px-5 py-10 sm:px-8 sm:py-16 md:px-20">
             <div>
-              <p className="text-xs tracking-[.18em]">THE ENVIAAR PHILOSOPHY</p>
+              <p className="text-xs uppercase tracking-[.18em] text-muted-foreground">{eyebrow}</p>
               <h2 className="mt-3 sm:mt-5 text-3xl sm:text-5xl">{title}</h2>
               <p className="mt-4 sm:mt-6 max-w-lg text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{copy}</p>
             </div>
           </div>
         </section>
       ))}
+
+      <section className="bg-secondary/35 py-12 sm:py-16 px-4 text-center border-t border-border/40">
+        <div className="mx-auto max-w-4xl space-y-4">
+          <p className="text-xs uppercase tracking-[.2em] text-muted-foreground">THE ENVIAAR EXPERIENCE</p>
+          <h3 className="font-display text-3xl sm:text-4xl md:text-5xl">Affordable Luxury at Your Fingertip</h3>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Discover demi-fine jewellery designed to elevate every moment with lasting brilliance, high-durability moissanite, and hand-selected freshwater pearls.
+          </p>
+        </div>
+      </section>
     </>
   );
 }
