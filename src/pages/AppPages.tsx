@@ -835,27 +835,203 @@ export function OrderPage({ id }: { id: string }) {
   );
 }
 
-export function PolicyPage({ title, sections }: { title: string; sections: string[] }) {
+export type PolicySectionItem = {
+  title: string;
+  content: string | string[];
+};
+
+export const detailedPolicies: Record<
+  string,
+  { title: string; eyebrow?: string; sections: PolicySectionItem[] }
+> = {
+  returns: {
+    title: "Return & Refund Policy",
+    eyebrow: "CUSTOMER CARE",
+    sections: [
+      {
+        title: "Claim Window",
+        content:
+          "Returns can be claimed within 2 days from the time of delivery. Return requests submitted after 2 days from delivery will not be eligible for processing.",
+      },
+      {
+        title: "How to Raise a Return Ticket",
+        content: [
+          "Return tickets must be raised via email at care@enviaar.com with the following mandatory details:",
+          "• Enviaar order number",
+          "• Contact details (Email & Mobile Phone)",
+          "• Chosen items to be returned",
+          "• Reason for return",
+          "• Photos and unboxing videos showing the defect and original packaging (Mandatory)",
+        ],
+      },
+      {
+        title: "Defect Requirement & Verification",
+        content:
+          "Returns are applicable strictly in the case of a defective or damaged item. Clear photos and unboxing videos are mandatory for verification before return pickup.",
+      },
+      {
+        title: "Offer & Sale Product Exclusions",
+        content:
+          "Returns are NOT applicable on products purchased under promotional offers, discounts, or festive sale events.",
+      },
+      {
+        title: "Refund Credit Options",
+        content:
+          "Returns, if claimed and approved, will be credited to your Enviaar Store Wallet or original payment method.",
+      },
+      {
+        title: "Refund Timeline & RBI Guidelines",
+        content:
+          "Refunds will be processed in 7 to 10 working days following standard RBI guidelines, following doorstep pickup and verification of the returned item.",
+      },
+    ],
+  },
+  privacy: {
+    title: "Privacy Policy",
+    eyebrow: "DATA PRIVACY",
+    sections: [
+      {
+        title: "Information We Collect",
+        content:
+          "We collect personal details including your name, email address, contact phone number, shipping address, and order history to process your orders seamlessly.",
+      },
+      {
+        title: "How We Use Information",
+        content:
+          "Your information is strictly used for order fulfillment, shipping updates, customer support, and store communications. We do not sell your personal information.",
+      },
+      {
+        title: "Your Choices",
+        content:
+          "You can access, update, or request deletion of your personal data anytime by logging into your ENVIAAR profile or emailing care@enviaar.com.",
+      },
+    ],
+  },
+  terms: {
+    title: "Terms & Conditions",
+    eyebrow: "TERMS OF SERVICE",
+    sections: [
+      {
+        title: "Website Use",
+        content:
+          "By accessing or placing an order on ENVIAAR, you agree to comply with our website usage terms and store policies.",
+      },
+      {
+        title: "Products & Pricing",
+        content:
+          "All prices are listed in Indian Rupees (₹) inclusive of applicable taxes. Prices and product specifications are subject to update.",
+      },
+      {
+        title: "Orders",
+        content:
+          "Orders are subject to confirmation and item availability. Tracking details will be dispatched immediately upon order dispatch.",
+      },
+    ],
+  },
+  "shipping-policy": {
+    title: "Shipping Policy",
+    eyebrow: "FULFILLMENT",
+    sections: [
+      {
+        title: "Processing",
+        content:
+          "Orders are inspected for quality and dispatched within 24 to 48 hours of confirmation.",
+      },
+      {
+        title: "Delivery",
+        content:
+          "Standard nationwide delivery takes 3 to 5 business days depending on your PIN code.",
+      },
+      {
+        title: "Tracking",
+        content:
+          "Real-time order tracking details will be sent via SMS and Email as soon as your shipment is dispatched.",
+      },
+    ],
+  },
+  "care-guide": {
+    title: "Jewellery Care Guide",
+    eyebrow: "MAINTENANCE",
+    sections: [
+      {
+        title: "Everyday Care",
+        content:
+          "Store your demi-fine jewellery in the provided ENVIAAR soft pouch to protect it from scratches and dust.",
+      },
+      {
+        title: "Storage & Protection",
+        content:
+          "Avoid direct contact with perfumes, hairsprays, sanitizers, and moisture to preserve stone clarity and gold plating.",
+      },
+      {
+        title: "Cleaning",
+        content:
+          "Gently wipe your jewellery with a clean, soft microfiber cloth after each wear to maintain its brilliant shine.",
+      },
+    ],
+  },
+};
+
+export function PolicyPage({
+  title,
+  sections,
+  policyKey,
+}: {
+  title?: string;
+  sections?: string[];
+  policyKey?: string;
+}) {
+  const getKey = () => {
+    if (policyKey) return policyKey;
+    if (!title) return "returns";
+    const lower = title.toLowerCase();
+    if (lower.includes("return")) return "returns";
+    if (lower.includes("privacy")) return "privacy";
+    if (lower.includes("term")) return "terms";
+    if (lower.includes("ship")) return "shipping-policy";
+    if (lower.includes("care")) return "care-guide";
+    return "returns";
+  };
+
+  const key = getKey();
+  const detail = detailedPolicies[key] || detailedPolicies["returns"]!;
+
   return (
     <>
-      <PageHero title={title} />
-      <article className="mx-auto max-w-3xl px-5 py-16">
-        {sections.map((x, i) => (
-          <section key={x} className="mb-10">
-            <h2 className="text-3xl">
-              {i + 1}. {x}
+      <PageHero title={detail.title} eyebrow={detail.eyebrow || "ENVIAAR POLICIES"} />
+      <article className="mx-auto max-w-4xl px-5 py-12 sm:py-16">
+        {detail.sections.map((sec, i) => (
+          <section key={sec.title} className="mb-8 sm:mb-10 border-b pb-8 last:border-b-0">
+            <h2 className="font-display text-2xl sm:text-3xl text-foreground">
+              {i + 1}. {sec.title}
             </h2>
-            <p className="mt-4 leading-7 text-muted-foreground">
-              We keep our policies clear and considered. For assistance, contact care@enviaar.com
-              with your order details and our support team will guide you through the applicable
-              process.
-            </p>
+            {Array.isArray(sec.content) ? (
+              <div className="mt-4 space-y-2 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">
+                {sec.content.map((line, idx) => (
+                  <p
+                    key={idx}
+                    className={
+                      line.startsWith("•")
+                        ? "pl-4 font-medium text-foreground"
+                        : ""
+                    }
+                  >
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">
+                {sec.content}
+              </p>
+            )}
           </section>
         ))}
       </article>
     </>
   );
 }
+
 export const policies = {
   privacy: {
     title: "Privacy Policy",
@@ -864,8 +1040,8 @@ export const policies = {
   terms: { title: "Terms & Conditions", sections: ["Website Use", "Products & Pricing", "Orders"] },
   "shipping-policy": { title: "Shipping Policy", sections: ["Processing", "Delivery", "Tracking"] },
   returns: {
-    title: "Return / Exchange Policy",
-    sections: ["Eligibility", "Exchange Process", "Refunds"],
+    title: "Return & Refund Policy",
+    sections: ["Claim Window", "Raising a Return Ticket", "Eligibility & Refunds"],
   },
   "care-guide": {
     title: "Jewellery Care Guide",
