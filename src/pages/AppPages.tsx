@@ -716,6 +716,44 @@ export function AboutPage() {
         </section>
       ))}
 
+      {/* DEDICATED MOISSANITE FEATURE SECTION */}
+      <section className="py-16 sm:py-24 px-4 sm:px-8 bg-background border-t border-border/40">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-xs uppercase tracking-[.22em] text-muted-foreground">THE SCIENCE OF SPARKLE</p>
+          <h2 className="mt-3 font-display text-3xl sm:text-5xl">Why Moissanite?</h2>
+          <p className="mt-4 sm:mt-6 max-w-3xl mx-auto text-sm sm:text-base leading-7 text-muted-foreground">
+            Moissanite is a lab-created gemstone made of silicon carbide that sparkles just like diamonds with an eye-catching bling.
+            Built for daily wear, it boasts a 9.25 score on the Mohs scale (where natural diamonds score 10), featuring an even higher refractive index for superior fire, durability, and brilliance.
+          </p>
+
+          <div className="mt-12 grid gap-6 sm:grid-cols-3 text-left">
+            <div className="border p-6 rounded-sm bg-secondary/20">
+              <span className="font-display text-4xl text-foreground font-semibold">9.25</span>
+              <p className="mt-1 text-xs uppercase tracking-[.15em] font-medium text-foreground">Mohs Hardness Scale</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Extremely durable and scratch-resistant for lifetime daily wear, second only to natural diamonds (10).
+              </p>
+            </div>
+
+            <div className="border p-6 rounded-sm bg-secondary/20">
+              <span className="font-display text-4xl text-foreground font-semibold">2.65+</span>
+              <p className="mt-1 text-xs uppercase tracking-[.15em] font-medium text-foreground">Refractive Index</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Higher light refraction than traditional diamonds (2.42), giving off vibrant rainbow flashes and eye-catching fire.
+              </p>
+            </div>
+
+            <div className="border p-6 rounded-sm bg-secondary/20">
+              <span className="font-display text-4xl text-foreground font-semibold">100%</span>
+              <p className="mt-1 text-xs uppercase tracking-[.15em] font-medium text-foreground">Lab-Created & Ethical</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Composed of silicon carbide, offering sustainable luxury, lasting brilliance, and daily-wear elegance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-secondary/35 py-12 sm:py-16 px-4 text-center border-t border-border/40">
         <div className="mx-auto max-w-4xl space-y-4">
           <p className="text-xs uppercase tracking-[.2em] text-muted-foreground">THE ENVIAAR EXPERIENCE</p>
