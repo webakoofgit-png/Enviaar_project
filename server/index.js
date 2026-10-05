@@ -558,6 +558,8 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
+const deletedServerProductIds = new Set();
+
 // Delete Products
 app.delete('/api/products', async (req, res) => {
   const { ids } = req.body;
@@ -566,11 +568,13 @@ app.delete('/api/products', async (req, res) => {
     return res.status(400).json({ error: 'No product IDs provided' });
   }
 
+  ids.forEach((id) => deletedServerProductIds.add(String(id)));
+
   try {
     await pool.query(`DELETE FROM products WHERE id IN (?)`, [ids]);
     res.json({ message: `${ids.length} products deleted successfully` });
   } catch (err) {
-    mockProducts = mockProducts.filter(p => !ids.includes(p.id));
+    mockProducts = mockProducts.filter((p) => !ids.includes(p.id) && !ids.includes(String(p.id)));
     res.json({ message: `${ids.length} products deleted` });
   }
 });

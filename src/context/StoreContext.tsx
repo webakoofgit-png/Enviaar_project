@@ -131,7 +131,7 @@ export function apiProductToStoreProduct(item: any): Product {
   };
 }
 
-import { getCustomProducts } from "@/lib/productStorage";
+import { getCustomProducts, filterDeletedProducts } from "@/lib/productStorage";
 
 export function deduplicateProducts(items: Product[]): Product[] {
   const seenIds = new Set<string>();
@@ -160,7 +160,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [productList, setProductList] = useState<Product[]>(() => {
     const custom = getCustomProducts();
-    return deduplicateProducts([...custom, ...initialProducts]);
+    const merged = deduplicateProducts([...custom, ...initialProducts]);
+    return filterDeletedProducts(merged);
   });
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -190,9 +191,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.warn("Backend API not reachable for storefront, using local custom products and fallback catalog");
       }
 
-      // Combine custom products created via Admin, API products, and initial static products with strict deduplication
+      // Combine custom products created via Admin, API products, and initial static products with strict deduplication & deletion filtering
       const allMerged = deduplicateProducts([...customProducts, ...convertedApi, ...initialProducts]);
-      setProductList(allMerged);
+      const cleanList = filterDeletedProducts(allMerged);
+      setProductList(cleanList);
     } finally {
       setLoadingProducts(false);
     }

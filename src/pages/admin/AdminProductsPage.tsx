@@ -19,7 +19,13 @@ import {
   Play,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getCustomProducts, removeCustomProducts, saveCustomProduct } from "@/lib/productStorage";
+import {
+  getCustomProducts,
+  removeCustomProducts,
+  saveCustomProduct,
+  markProductsAsDeleted,
+  filterDeletedProducts,
+} from "@/lib/productStorage";
 import { normalizeCategory } from "@/context/StoreContext";
 import type { Product as StoreProduct } from "@/types/store";
 
@@ -210,7 +216,7 @@ export function AdminProductsPage() {
               unique.push(item);
             }
           }
-          setProducts(unique);
+          setProducts(filterDeletedProducts(unique));
           return;
         }
       } catch (e) {
@@ -342,7 +348,7 @@ export function AdminProductsPage() {
       ];
       const customIds = new Set(customItems.map((c: Product) => String(c.id)));
       const filteredFallback = fallback.filter((f) => !customIds.has(String(f.id)));
-      setProducts([...customItems, ...filteredFallback]);
+      setProducts(filterDeletedProducts([...customItems, ...filteredFallback]));
     } finally {
       setLoading(false);
     }
@@ -452,6 +458,8 @@ export function AdminProductsPage() {
   // Bulk Delete
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
+    const itemsToDelete = products.filter((p) => selectedIds.includes(p.id));
+    markProductsAsDeleted(itemsToDelete);
     removeCustomProducts(selectedIds);
     try {
       await fetch("http://localhost:5000/api/products", {
@@ -459,11 +467,11 @@ export function AdminProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedIds }),
       });
-      toast.success(`${selectedIds.length} items removed`);
+      toast.success(`${selectedIds.length} items removed permanently`);
     } catch (err) {
-      toast.success("Removed from view");
+      toast.success("Removed permanently");
     } finally {
-      setProducts(products.filter((p) => !selectedIds.includes(p.id)));
+      setProducts((current) => filterDeletedProducts(current.filter((p) => !selectedIds.includes(p.id))));
       setSelectedIds([]);
       window.dispatchEvent(new Event("enviaar_products_updated"));
     }
