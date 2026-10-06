@@ -498,41 +498,57 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description } = req.body;
 
+  // Ensure image_url safely fits within standard MySQL VARCHAR(255) if it's a huge Base64 data string
+  const safeImageUrl = (image && image.length < 500)
+    ? image
+    : 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80';
+
+  const productObj = {
+    id: id || Date.now(),
+    name: name || 'New ENVIAAR Product',
+    category: category || 'Fine Jewellery',
+    sku: sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`,
+    description: description || 'A refined ENVIAAR piece made for effortless transitions.',
+    createdAt: 'Just now',
+    regularPrice: regularPrice || 4990.00,
+    sellPrice: sellPrice || 4290.00,
+    priceUSD: priceUSD ? parseFloat(priceUSD) : undefined,
+    priceAED: priceAED ? parseFloat(priceAED) : undefined,
+    stock: stock || 50,
+    status: status || 'Published',
+    image: image || safeImageUrl,
+    media: media || (image ? [{ id: '1', url: image, type: 'image' }] : [])
+  };
+
   try {
     const [result] = await pool.query(
       `INSERT INTO products (name, sku, description, regular_price, sell_price, stock_quantity, status, image_url)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`, description || null, regularPrice || 0, sellPrice || 0, stock || 0, status || 'Published', image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80']
+      [
+        productObj.name,
+        productObj.sku,
+        productObj.description,
+        productObj.regularPrice,
+        productObj.sellPrice,
+        productObj.stock,
+        productObj.status,
+        safeImageUrl
+      ]
     );
 
-    res.status(201).json({ id: result.insertId, message: 'Product created successfully', media: media || [], priceUSD, priceAED });
+    productObj.id = result.insertId;
+    res.status(201).json(productObj);
   } catch (err) {
-    const newId = id || Date.now();
-    const newProduct = {
-      id: newId,
-      name: name || 'New ENVIAAR Product',
-      category: category || 'Fine Jewellery',
-      sku: sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`,
-      description: description || 'A refined ENVIAAR piece made for effortless transitions.',
-      createdAt: 'Just now',
-      regularPrice: regularPrice || 4990.00,
-      sellPrice: sellPrice || 4290.00,
-      priceUSD: priceUSD ? parseFloat(priceUSD) : undefined,
-      priceAED: priceAED ? parseFloat(priceAED) : undefined,
-      stock: stock || 50,
-      status: status || 'Published',
-      image: image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80',
-      media: media || (image ? [{ id: '1', url: image, type: 'image' }] : [])
-    };
+    console.warn('MySQL DB product insert fallback used:', err.message);
 
-    const existingIndex = mockProducts.findIndex(p => String(p.id) === String(newId) || p.name.toLowerCase().trim() === newProduct.name.toLowerCase().trim());
+    const existingIndex = mockProducts.findIndex(p => String(p.id) === String(productObj.id) || p.name.toLowerCase().trim() === productObj.name.toLowerCase().trim());
     if (existingIndex >= 0) {
-      mockProducts[existingIndex] = { ...mockProducts[existingIndex], ...newProduct };
+      mockProducts[existingIndex] = { ...mockProducts[existingIndex], ...productObj };
     } else {
-      mockProducts.unshift(newProduct);
+      mockProducts.unshift(productObj);
     }
 
-    res.status(201).json(newProduct);
+    res.status(201).json(productObj);
   }
 });
 
