@@ -589,7 +589,12 @@ export function CheckoutPage() {
                   <p className="font-medium line-clamp-1">{x.product.name}</p>
                   <p className="text-xs text-muted-foreground">Qty {x.quantity} {x.finish ? `· ${x.finish}` : ""}</p>
                 </div>
-                <span className="text-xs sm:text-sm font-medium">{formatAmount(price * x.quantity, x.product)}</span>
+                <span className="text-xs sm:text-sm font-medium">
+                  {formatAmount(price * x.quantity, {
+                    priceUSD: x.product.priceUSD ? x.product.priceUSD * x.quantity : undefined,
+                    priceAED: x.product.priceAED ? x.product.priceAED * x.quantity : undefined,
+                  })}
+                </span>
               </div>
             );
           })}

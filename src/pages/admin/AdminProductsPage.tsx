@@ -38,8 +38,8 @@ interface Product {
   createdAt: string;
   regularPrice: number;
   sellPrice: number;
-  priceUSD?: number;
-  priceAED?: number;
+  priceUSD?: number | undefined;
+  priceAED?: number | undefined;
   stock: number;
   status: "Published" | "Inactive" | "out Stock" | "Draft" | "Archived";
   image: string;

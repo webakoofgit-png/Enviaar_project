@@ -22,8 +22,8 @@ type StoreState = {
   selectedCountry: CountryOption;
   setSelectedCountry: (country: CountryOption) => void;
   formatProductPrice: (product: Product) => string;
-  formatAmount: (amountInINR: number, customPrices?: { priceUSD?: number; priceAED?: number }) => string;
-  getAmountNumber: (amountInINR: number, customPrices?: { priceUSD?: number; priceAED?: number }) => number;
+  formatAmount: (amountInINR: number, customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined) => string;
+  getAmountNumber: (amountInINR: number, customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined) => number;
   cartOpen: boolean;
   searchOpen: boolean;
   accountOpen: boolean;
@@ -451,7 +451,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const [selectedCountry, setSelectedCountryState] = useState<CountryOption>(() => {
     const saved = readLocal<CountryOption | null>("enviaar-country", null);
-    return saved || supportedCountries[0];
+    return saved || supportedCountries[0]!;
   });
 
   const setSelectedCountry = (country: CountryOption) => {
@@ -471,14 +471,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const formatAmount = (
     amountInINR: number,
-    customPrices?: { priceUSD?: number; priceAED?: number }
+    customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined
   ) => {
     return formatPrice(amountInINR, selectedCountry, customPrices);
   };
 
   const getAmountNumber = (
     amountInINR: number,
-    customPrices?: { priceUSD?: number; priceAED?: number }
+    customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined
   ) => {
     return getConvertedPrice(amountInINR, selectedCountry, customPrices);
   };

@@ -14,8 +14,8 @@ export const supportedCountries: CountryOption[] = [
 
 export function getConvertedPrice(
   amountInINR: number,
-  country: CountryOption = supportedCountries[0],
-  customPrices?: { priceUSD?: number; priceAED?: number }
+  country: CountryOption = supportedCountries[0]!,
+  customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined
 ): number {
   const num = Number(amountInINR) || 0;
 
@@ -38,8 +38,8 @@ export function getConvertedPrice(
 
 export function formatPrice(
   amountInINR: number,
-  country: CountryOption = supportedCountries[0],
-  customPrices?: { priceUSD?: number; priceAED?: number }
+  country: CountryOption = supportedCountries[0]!,
+  customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined
 ): string {
   const finalPrice = getConvertedPrice(amountInINR, country, customPrices);
 
@@ -56,8 +56,8 @@ export function formatPrice(
 
 export const money = (
   value: number,
-  country: CountryOption = supportedCountries[0],
-  customPrices?: { priceUSD?: number; priceAED?: number }
+  country: CountryOption = supportedCountries[0]!,
+  customPrices?: { priceUSD?: number | undefined; priceAED?: number | undefined } | undefined
 ) => formatPrice(value, country, customPrices);
 
 const catalogue: Omit<Product, "id" | "description" | "rating">[] = [
