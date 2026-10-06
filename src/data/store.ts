@@ -23,14 +23,14 @@ export function getConvertedPrice(
     if (customPrices?.priceUSD && customPrices.priceUSD > 0) {
       return customPrices.priceUSD;
     }
-    return Math.round(num * 0.012); // Exchange rate: ~83.3 INR = 1 USD
+    return Math.round(num * 0.01038 * 100) / 100; // Exchange rate: 1 INR = 0.01038 USD (e.g. ₹4,000 = $41.52)
   }
 
   if (country.currency === "AED") {
     if (customPrices?.priceAED && customPrices.priceAED > 0) {
       return customPrices.priceAED;
     }
-    return Math.round(num * 0.044); // Exchange rate: ~22.7 INR = 1 AED
+    return Math.round(num * 0.03816 * 100) / 100; // Exchange rate: 1 INR = 0.03816 AED (e.g. ₹4,000 = AED 152.64)
   }
 
   return num;
@@ -44,11 +44,11 @@ export function formatPrice(
   const finalPrice = getConvertedPrice(amountInINR, country, customPrices);
 
   if (country.currency === "USD") {
-    return `$${finalPrice.toLocaleString("en-US")}`;
+    return `$${finalPrice.toLocaleString("en-US", { minimumFractionDigits: finalPrice % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
   }
 
   if (country.currency === "AED") {
-    return `AED ${finalPrice.toLocaleString("en-AE")}`;
+    return `AED ${finalPrice.toLocaleString("en-AE", { minimumFractionDigits: finalPrice % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
   }
 
   return `₹${finalPrice.toLocaleString("en-IN")}`;
