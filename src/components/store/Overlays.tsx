@@ -118,7 +118,7 @@ export function SearchOverlay() {
 }
 
 export function CartDrawer() {
-  const { cartOpen, setCartOpen, cart, updateQuantity, removeFromCart } = useStore();
+  const { cartOpen, setCartOpen, cart, updateQuantity, removeFromCart, formatAmount, formatProductPrice } = useStore();
   const subtotal = cart.reduce(
     (sum, item) => sum + (Number(item?.product?.price) || 0) * (item?.quantity || 1),
     0,
@@ -149,7 +149,7 @@ export function CartDrawer() {
             </div>
             <div className="mt-6 border-y py-4 text-center text-xs">
               {remaining
-                ? `You’re ${money(remaining)} away from free shipping`
+                ? `You’re ${formatAmount(remaining)} away from free shipping`
                 : "Complimentary shipping unlocked"}
               <div className="mt-3 h-1 bg-muted">
                 <div
@@ -172,6 +172,7 @@ export function CartDrawer() {
                   const itemPrice = Number(product.price) || 0;
                   const itemFinish = finish || product.finish || "Gold";
                   const itemKey = `${product.id || index}-${itemFinish}-${size || ""}`;
+                  const qty = quantity || 1;
                   return (
                     <div key={itemKey} className="flex gap-4 border-b py-4">
                       <img
@@ -205,7 +206,12 @@ export function CartDrawer() {
                         </div>
                       </div>
                       <div className="text-right text-sm">
-                        <p>{money(itemPrice * (quantity || 1))}</p>
+                        <p>
+                          {formatAmount(itemPrice * qty, {
+                            priceUSD: product.priceUSD ? product.priceUSD * qty : undefined,
+                            priceAED: product.priceAED ? product.priceAED * qty : undefined,
+                          })}
+                        </p>
                         <button
                           className="mt-12 text-xs underline"
                           onClick={() => removeFromCart(product.id)}
@@ -221,7 +227,7 @@ export function CartDrawer() {
             <div className="border-t pt-5">
               <div className="mb-5 flex justify-between">
                 <span>Subtotal</span>
-                <strong>{money(subtotal)}</strong>
+                <strong>{formatAmount(subtotal)}</strong>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button asChild variant="luxury-outline" onClick={() => setCartOpen(false)}>

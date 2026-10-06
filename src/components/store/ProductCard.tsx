@@ -12,7 +12,7 @@ export function ProductCard({
   product: Product;
   onQuickView?: (product: Product) => void;
 }) {
-  const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart, formatProductPrice } = useStore();
   return (
     <article className="group min-w-0">
       <div className="relative aspect-[4/5] overflow-hidden bg-muted">
@@ -73,7 +73,7 @@ export function ProductCard({
         <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">
           {product.material} · {product.finish}
         </p>
-        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium">{money(product.price)}</p>
+        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium">{formatProductPrice(product)}</p>
       </div>
     </article>
   );

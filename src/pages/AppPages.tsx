@@ -109,7 +109,7 @@ export function Collections() {
 
 export function ProductPage({ slug }: { slug: string }) {
   const navigate = useNavigate();
-  const { products, addToCart, toggleWishlist, wishlist } = useStore();
+  const { products, addToCart, toggleWishlist, wishlist, formatProductPrice } = useStore();
   const product = products.find((p) => p.slug === slug || String(p.id) === String(slug));
   const [finish, setFinish] = useState(product?.colors?.[0] ?? product?.finish ?? "Gold");
   const [size, setSize] = useState(product?.sizes?.[0]);
@@ -205,7 +205,7 @@ export function ProductPage({ slug }: { slug: string }) {
           <div className="mt-3 sm:mt-4 flex items-center gap-2 text-sm">
             <Star size={15} className="fill-current" /> {product.rating} · 128 reviews
           </div>
-          <p className="mt-4 sm:mt-6 text-xl sm:text-2xl font-medium">{money(product.price)}</p>
+          <p className="mt-4 sm:mt-6 text-xl sm:text-2xl font-medium">{formatProductPrice(product)}</p>
           <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{product.description}</p>
           <Option title="Finish" values={product.colors} value={finish} onChange={setFinish} />
           {product.sizes && (
@@ -416,7 +416,7 @@ function SummaryRow({ label, value, text }: { label: string; value?: number; tex
 }
 
 export function CheckoutPage() {
-  const { cart, user } = useStore();
+  const { cart, user, formatAmount } = useStore();
   const [step, setStep] = useState(0);
   const [placedOrderNumber, setPlacedOrderNumber] = useState("");
 
@@ -589,13 +589,13 @@ export function CheckoutPage() {
                   <p className="font-medium line-clamp-1">{x.product.name}</p>
                   <p className="text-xs text-muted-foreground">Qty {x.quantity} {x.finish ? `· ${x.finish}` : ""}</p>
                 </div>
-                <span className="text-xs sm:text-sm font-medium">{money(price * x.quantity)}</span>
+                <span className="text-xs sm:text-sm font-medium">{formatAmount(price * x.quantity, x.product)}</span>
               </div>
             );
           })}
           <div className="mt-6 flex justify-between border-t pt-4 sm:pt-5 text-sm sm:text-base">
             <strong>Total</strong>
-            <strong>{money(total)}</strong>
+            <strong>{formatAmount(total)}</strong>
           </div>
         </aside>
       </div>

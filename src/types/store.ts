@@ -4,6 +4,16 @@ export type MediaItem = {
   type: "image" | "video";
 };
 
+export type CurrencyCode = "INR" | "USD" | "AED";
+
+export type CountryOption = {
+  code: "IN" | "US" | "AE";
+  name: string;
+  currency: CurrencyCode;
+  symbol: string;
+  flag: string;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -12,7 +22,9 @@ export type Product = {
   subcategory: string;
   material: string;
   finish: string;
-  price: number;
+  price: number; // Base price in INR
+  priceUSD?: number | undefined; // Optional custom USD price override
+  priceAED?: number | undefined; // Optional custom AED price override
   image: string;
   alternateImage: string;
   media?: MediaItem[] | undefined;

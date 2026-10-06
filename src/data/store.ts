@@ -2,9 +2,63 @@ import hero from "@/assets/enviaar-hero.jpg";
 import productsEditorial from "@/assets/enviaar-products.jpg";
 import festive from "@/assets/enviaar-festive.jpg";
 import mens from "@/assets/enviaar-men.jpg";
-import type { Product } from "@/types/store";
+import type { CountryOption, Product } from "@/types/store";
 
 export const images = { hero, productsEditorial, festive, mens };
+
+export const supportedCountries: CountryOption[] = [
+  { code: "IN", name: "India", currency: "INR", symbol: "₹", flag: "🇮🇳" },
+  { code: "US", name: "United States", currency: "USD", symbol: "$", flag: "🇺🇸" },
+  { code: "AE", name: "Dubai / UAE", currency: "AED", symbol: "AED", flag: "🇦🇪" },
+];
+
+export function getConvertedPrice(
+  amountInINR: number,
+  country: CountryOption = supportedCountries[0],
+  customPrices?: { priceUSD?: number; priceAED?: number }
+): number {
+  const num = Number(amountInINR) || 0;
+
+  if (country.currency === "USD") {
+    if (customPrices?.priceUSD && customPrices.priceUSD > 0) {
+      return customPrices.priceUSD;
+    }
+    return Math.round(num * 0.012); // Exchange rate: ~83.3 INR = 1 USD
+  }
+
+  if (country.currency === "AED") {
+    if (customPrices?.priceAED && customPrices.priceAED > 0) {
+      return customPrices.priceAED;
+    }
+    return Math.round(num * 0.044); // Exchange rate: ~22.7 INR = 1 AED
+  }
+
+  return num;
+}
+
+export function formatPrice(
+  amountInINR: number,
+  country: CountryOption = supportedCountries[0],
+  customPrices?: { priceUSD?: number; priceAED?: number }
+): string {
+  const finalPrice = getConvertedPrice(amountInINR, country, customPrices);
+
+  if (country.currency === "USD") {
+    return `$${finalPrice.toLocaleString("en-US")}`;
+  }
+
+  if (country.currency === "AED") {
+    return `AED ${finalPrice.toLocaleString("en-AE")}`;
+  }
+
+  return `₹${finalPrice.toLocaleString("en-IN")}`;
+}
+
+export const money = (
+  value: number,
+  country: CountryOption = supportedCountries[0],
+  customPrices?: { priceUSD?: number; priceAED?: number }
+) => formatPrice(value, country, customPrices);
 
 const catalogue: Omit<Product, "id" | "description" | "rating">[] = [
   {
@@ -228,9 +282,4 @@ export const collectionInfo: Record<string, { title: string; copy: string; image
     copy: "The pieces our community returns to.",
     image: productsEditorial,
   },
-};
-
-export const money = (value: number) => {
-  const num = Number(value) || 0;
-  return `₹${num.toLocaleString("en-IN")}`;
 };

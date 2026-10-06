@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { CartItem, MediaItem, Product } from "@/types/store";
-import { products as initialProducts } from "@/data/store";
+import type { CartItem, CountryOption, MediaItem, Product } from "@/types/store";
+import { products as initialProducts, supportedCountries, formatPrice, getConvertedPrice } from "@/data/store";
 import { getSavedUserProfile, saveUserProfile } from "@/lib/userStorage";
 
 export type CustomerUser = {
@@ -19,6 +19,11 @@ type StoreState = {
   products: Product[];
   loadingProducts: boolean;
   user: CustomerUser | null;
+  selectedCountry: CountryOption;
+  setSelectedCountry: (country: CountryOption) => void;
+  formatProductPrice: (product: Product) => string;
+  formatAmount: (amountInINR: number, customPrices?: { priceUSD?: number; priceAED?: number }) => string;
+  getAmountNumber: (amountInINR: number, customPrices?: { priceUSD?: number; priceAED?: number }) => number;
   cartOpen: boolean;
   searchOpen: boolean;
   accountOpen: boolean;
@@ -118,6 +123,8 @@ export function apiProductToStoreProduct(item: any): Product {
     material: item.material || "92.5 Silver",
     finish: item.finish || "18K Gold Plated",
     price: Number(item.sellPrice || item.regularPrice || item.price || 0),
+    priceUSD: item.priceUSD ? Number(item.priceUSD) : undefined,
+    priceAED: item.priceAED ? Number(item.priceAED) : undefined,
     image: primaryImage,
     alternateImage: alternateImage,
     media: mediaItems,
@@ -442,6 +449,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const [selectedCountry, setSelectedCountryState] = useState<CountryOption>(() => {
+    const saved = readLocal<CountryOption | null>("enviaar-country", null);
+    return saved || supportedCountries[0];
+  });
+
+  const setSelectedCountry = (country: CountryOption) => {
+    setSelectedCountryState(country);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("enviaar-country", JSON.stringify(country));
+    }
+  };
+
+  const formatProductPrice = (product: Product) => {
+    if (!product) return formatPrice(0, selectedCountry);
+    return formatPrice(product.price, selectedCountry, {
+      priceUSD: product.priceUSD,
+      priceAED: product.priceAED,
+    });
+  };
+
+  const formatAmount = (
+    amountInINR: number,
+    customPrices?: { priceUSD?: number; priceAED?: number }
+  ) => {
+    return formatPrice(amountInINR, selectedCountry, customPrices);
+  };
+
+  const getAmountNumber = (
+    amountInINR: number,
+    customPrices?: { priceUSD?: number; priceAED?: number }
+  ) => {
+    return getConvertedPrice(amountInINR, selectedCountry, customPrices);
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -450,6 +491,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         products: productList,
         loadingProducts,
         user,
+        selectedCountry,
+        setSelectedCountry,
+        formatProductPrice,
+        formatAmount,
+        getAmountNumber,
         cartOpen,
         searchOpen,
         accountOpen,

@@ -38,6 +38,8 @@ interface Product {
   createdAt: string;
   regularPrice: number;
   sellPrice: number;
+  priceUSD?: number;
+  priceAED?: number;
   stock: number;
   status: "Published" | "Inactive" | "out Stock" | "Draft" | "Archived";
   image: string;
@@ -73,6 +75,8 @@ export function AdminProductsPage() {
     description: "",
     regularPrice: "4990.00",
     sellPrice: "4290.00",
+    priceUSD: "",
+    priceAED: "",
     stock: "35",
     status: "Published",
   });
@@ -86,6 +90,8 @@ export function AdminProductsPage() {
       description: "",
       regularPrice: "4990.00",
       sellPrice: "4290.00",
+      priceUSD: "",
+      priceAED: "",
       stock: "35",
       status: "Published",
     });
@@ -102,6 +108,8 @@ export function AdminProductsPage() {
       description: product.description || "",
       regularPrice: String(product.regularPrice || 0),
       sellPrice: String(product.sellPrice || 0),
+      priceUSD: product.priceUSD ? String(product.priceUSD) : "",
+      priceAED: product.priceAED ? String(product.priceAED) : "",
       stock: String(product.stock || 0),
       status: product.status || "Published",
     });
@@ -193,6 +201,8 @@ export function AdminProductsPage() {
         createdAt: "Just now",
         regularPrice: Math.round(cp.price * 1.15),
         sellPrice: cp.price,
+        priceUSD: cp.priceUSD,
+        priceAED: cp.priceAED,
         stock: 35,
         status: "Published",
         image: cp.image,
@@ -400,6 +410,8 @@ export function AdminProductsPage() {
       material: "92.5 Silver",
       finish: "18K Gold Plated",
       price: parseFloat(formData.sellPrice) || parseFloat(formData.regularPrice) || 0,
+      priceUSD: formData.priceUSD ? parseFloat(formData.priceUSD) : undefined,
+      priceAED: formData.priceAED ? parseFloat(formData.priceAED) : undefined,
       image: primaryImage,
       alternateImage: mediaItems[1]?.url || primaryImage,
       media: mediaItems,
@@ -422,6 +434,8 @@ export function AdminProductsPage() {
       description: formData.description,
       regularPrice: parseFloat(formData.regularPrice) || 0,
       sellPrice: parseFloat(formData.sellPrice) || 0,
+      priceUSD: formData.priceUSD ? parseFloat(formData.priceUSD) : undefined,
+      priceAED: formData.priceAED ? parseFloat(formData.priceAED) : undefined,
       stock: parseInt(formData.stock) || 0,
       status: formData.status,
       image: primaryImage,
@@ -872,6 +886,39 @@ export function AdminProductsPage() {
                     onChange={(e) => setFormData({ ...formData, sellPrice: e.target.value })}
                     className="w-full h-9 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900"
                   />
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+                    International Custom Pricing (Optional)
+                  </span>
+                  <span className="text-[10px] text-amber-700">Auto-converted if blank</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">USA Price ($ USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Auto (0.012 rate)"
+                      value={formData.priceUSD}
+                      onChange={(e) => setFormData({ ...formData, priceUSD: e.target.value })}
+                      className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 mb-1">Dubai/UAE Price (AED)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Auto (0.044 rate)"
+                      value={formData.priceAED}
+                      onChange={(e) => setFormData({ ...formData, priceAED: e.target.value })}
+                      className="w-full h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
                 </div>
               </div>
 

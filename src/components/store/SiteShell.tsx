@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  ChevronDown,
   ChevronRight,
   Facebook,
   Heart,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/context/StoreContext";
-import { images } from "@/data/store";
+import { images, supportedCountries } from "@/data/store";
 import { AccountDrawer, CartDrawer, SearchOverlay } from "./Overlays";
 
 const nav = [
@@ -70,7 +71,17 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const { cart, wishlist, setSearchOpen, setAccountOpen, setCartOpen, isLoggedIn, user } = useStore();
+  const {
+    cart,
+    wishlist,
+    setSearchOpen,
+    setAccountOpen,
+    setCartOpen,
+    isLoggedIn,
+    user,
+    selectedCountry,
+    setSelectedCountry,
+  } = useStore();
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -119,8 +130,28 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          {/* Right: Actions (Search, Account, Wishlist, Bag) */}
+          {/* Right: Actions (Country Selector, Search, Account, Wishlist, Bag) */}
           <div className="flex items-center justify-end gap-0.5 sm:gap-1 shrink-0">
+            {/* Country / Currency Selector Dropdown */}
+            <div className="relative group mr-1 sm:mr-2">
+              <select
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const found = supportedCountries.find((c) => c.code === e.target.value);
+                  if (found) setSelectedCountry(found);
+                }}
+                className="appearance-none bg-secondary/60 hover:bg-secondary border border-border/80 rounded-full px-2.5 py-1 text-[11px] font-medium cursor-pointer pr-6 text-foreground outline-none transition shadow-xs"
+                aria-label="Select Country & Currency"
+              >
+                {supportedCountries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.currency} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 size-3 pointer-events-none text-muted-foreground" />
+            </div>
+
             <Button
               variant="ghost"
               size="icon"

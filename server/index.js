@@ -496,7 +496,7 @@ app.get('/api/products', async (req, res) => {
 
 // Add Product endpoint
 app.post('/api/products', async (req, res) => {
-  const { id, name, category, sku, regularPrice, sellPrice, stock, status, image, media, description } = req.body;
+  const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description } = req.body;
 
   try {
     const [result] = await pool.query(
@@ -505,7 +505,7 @@ app.post('/api/products', async (req, res) => {
       [name, sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`, description || null, regularPrice || 0, sellPrice || 0, stock || 0, status || 'Published', image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80']
     );
 
-    res.status(201).json({ id: result.insertId, message: 'Product created successfully', media: media || [] });
+    res.status(201).json({ id: result.insertId, message: 'Product created successfully', media: media || [], priceUSD, priceAED });
   } catch (err) {
     const newId = id || Date.now();
     const newProduct = {
@@ -517,6 +517,8 @@ app.post('/api/products', async (req, res) => {
       createdAt: 'Just now',
       regularPrice: regularPrice || 4990.00,
       sellPrice: sellPrice || 4290.00,
+      priceUSD: priceUSD ? parseFloat(priceUSD) : undefined,
+      priceAED: priceAED ? parseFloat(priceAED) : undefined,
       stock: stock || 50,
       status: status || 'Published',
       image: image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80',
@@ -537,7 +539,7 @@ app.post('/api/products', async (req, res) => {
 // Update Product
 app.put('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, sellPrice, stock, status, description } = req.body;
+  const { name, sellPrice, priceUSD, priceAED, stock, status, description } = req.body;
 
   try {
     await pool.query(
@@ -552,6 +554,8 @@ app.put('/api/products/:id', async (req, res) => {
       if (name) p.name = name;
       if (description) p.description = description;
       if (sellPrice) p.sellPrice = sellPrice;
+      if (priceUSD !== undefined) p.priceUSD = priceUSD ? parseFloat(priceUSD) : undefined;
+      if (priceAED !== undefined) p.priceAED = priceAED ? parseFloat(priceAED) : undefined;
       if (stock !== undefined) p.stock = stock;
     }
     res.json({ message: 'Product updated' });
