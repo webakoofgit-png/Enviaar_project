@@ -942,12 +942,7 @@ export const detailedPolicies: Record<
         title: "How We Use Information",
         content:
           "Your information is strictly used for order fulfillment, shipping updates, customer support, and store communications. We do not sell your personal information.",
-      },
-      {
-        title: "Your Choices",
-        content:
-          "You can access, update, or request deletion of your personal data anytime by logging into your ENVIAAR profile or emailing care@enviaar.com.",
-      },
+      }
     ],
   },
   terms: {
@@ -962,7 +957,7 @@ export const detailedPolicies: Record<
       {
         title: "Products & Pricing",
         content:
-          "All prices are listed in Indian Rupees (₹) inclusive of applicable taxes. Prices and product specifications are subject to update.",
+          "All prices are inclusive of applicable taxes. Prices and product specifications are subject to update.",
       },
       {
         title: "Orders",

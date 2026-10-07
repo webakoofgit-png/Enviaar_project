@@ -2182,6 +2182,31 @@ export function AdminMarketing() {
   );
 }
 
+function getSavingsAmount(type: string, value: string, minSpendStr: string): string {
+  if (type === "Free Shipping" || value.toLowerCase().includes("free")) {
+    return "Free Delivery";
+  }
+
+  const rawMin = parseFloat(minSpendStr.replace(/[^0-9.]/g, "")) || 0;
+
+  if (type === "Percentage" || value.includes("%")) {
+    const pct = parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
+    if (pct > 0 && rawMin > 0) {
+      const discount = Math.round((rawMin * pct) / 100);
+      return `₹${discount.toLocaleString("en-IN")} OFF`;
+    }
+  }
+
+  if (type === "Fixed Amount" || value.includes("₹")) {
+    const fixed = parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
+    if (fixed > 0) {
+      return `₹${fixed.toLocaleString("en-IN")} OFF`;
+    }
+  }
+
+  return value;
+}
+
 export function AdminDiscounts() {
   const [coupons, setCoupons] = useState([
     { id: "1", code: "ENVIAAR10", type: "Percentage", value: "10% OFF", minSpend: "₹1,999", usage: "142 / 500", status: "Active" },
@@ -2281,6 +2306,7 @@ export function AdminDiscounts() {
                 <th className="py-3 px-4">Coupon Code</th>
                 <th className="py-3 px-4">Discount Type</th>
                 <th className="py-3 px-4">Value</th>
+                <th className="py-3 px-4">Savings Amount</th>
                 <th className="py-3 px-4">Min Spend</th>
                 <th className="py-3 px-4 text-center">Usage Count</th>
                 <th className="py-3 px-4">Status</th>
@@ -2296,6 +2322,11 @@ export function AdminDiscounts() {
                   </td>
                   <td className="py-3.5 px-4 text-slate-600">{c.type}</td>
                   <td className="py-3.5 px-4 font-bold text-emerald-700">{c.value}</td>
+                  <td className="py-3.5 px-4 font-bold text-slate-900">
+                    <span className="bg-amber-50 text-amber-900 border border-amber-200/80 px-2 py-0.5 rounded-md font-extrabold">
+                      {getSavingsAmount(c.type, c.value, c.minSpend)}
+                    </span>
+                  </td>
                   <td className="py-3.5 px-4 font-semibold">{c.minSpend}</td>
                   <td className="py-3.5 px-4 text-center font-bold text-slate-900">{c.usage}</td>
                   <td className="py-3.5 px-4">
