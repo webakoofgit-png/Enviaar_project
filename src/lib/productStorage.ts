@@ -13,26 +13,68 @@ export function getCustomProducts(): Product[] {
   }
 }
 
+const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&q=80";
+
+function sanitizeForStorage(p: Product): Product {
+  const isBase64 = (url?: string) => typeof url === "string" && url.startsWith("data:");
+  return {
+    ...p,
+    image: isBase64(p.image) && p.image.length > 3000 ? DEFAULT_FALLBACK_IMAGE : p.image,
+    alternateImage: isBase64(p.alternateImage) && p.alternateImage.length > 3000 ? "" : p.alternateImage,
+    media: p.media
+      ? p.media.map((m) => ({
+          ...m,
+          url: isBase64(m.url) && m.url.length > 3000 ? DEFAULT_FALLBACK_IMAGE : m.url,
+        }))
+      : undefined,
+  };
+}
+
+export function unmarkProductAsDeleted(nameOrId: { id?: string | number; name?: string }): void {
+  if (typeof window === "undefined" || !nameOrId) return;
+  try {
+    const raw = localStorage.getItem(DELETED_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const ids = new Set((parsed.ids || []).map(String));
+    const names = new Set((parsed.names || []).map((n: string) => String(n).toLowerCase().trim()));
+
+    if (nameOrId.id != null) ids.delete(String(nameOrId.id));
+    if (nameOrId.name) names.delete(nameOrId.name.toLowerCase().trim());
+
+    localStorage.setItem(
+      DELETED_KEY,
+      JSON.stringify({
+        ids: Array.from(ids),
+        names: Array.from(names),
+      }),
+    );
+  } catch (err) {
+    console.error("Failed to unmark product as deleted:", err);
+  }
+}
+
 export function saveCustomProduct(product: Product): Product[] {
   if (typeof window === "undefined") return [];
   try {
+    // Unmark as deleted in case a deleted key exists for this product name/ID
+    unmarkProductAsDeleted(product);
+
     const current = getCustomProducts();
     const filtered = current.filter((p) => String(p.id) !== String(product.id));
     const updated = [product, ...filtered];
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch (quotaErr) {
-      const trimmed = updated.map((p, idx) =>
-        idx === 0
-          ? p
-          : {
-              ...p,
-              media: undefined,
-              alternateImage:
-                p.alternateImage && p.alternateImage.startsWith("data:") ? "" : p.alternateImage,
-            },
-      );
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      console.warn("localStorage quota hit, saving sanitized lightweight products");
+      const sanitizedList = updated.map(sanitizeForStorage);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedList));
+      } catch (e2) {
+        // Keep only top 10 products if storage is severely constrained
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedList.slice(0, 10)));
+      }
     }
     return updated;
   } catch (err) {

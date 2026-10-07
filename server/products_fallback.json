@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1791369426867,
+    "name": "Aurelia Purple Earrings",
+    "category": "Earrings",
+    "sku": "#ENV-JWL1791208010458",
+    "description": "A refined ENVIAAR piece made for effortless transitions.",
+    "createdAt": "Just now",
+    "regularPrice": 4934,
+    "sellPrice": 4290,
+    "stock": 35,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80",
+    "media": [
+      {
+        "id": "1",
+        "url": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80",
+        "type": "image"
+      }
+    ]
+  },
+  {
+    "id": 1,
+    "name": "Aurelia Drop Earrings",
+    "category": "Earrings",
+    "sku": "#ENV-EAR001",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 3990,
+    "sellPrice": 3490,
+    "stock": 48,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80"
+  },
+  {
+    "id": 2,
+    "name": "Mira Pearl Studs",
+    "category": "Earrings",
+    "sku": "#ENV-EAR002",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 2200,
+    "sellPrice": 1890,
+    "stock": 65,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80"
+  },
+  {
+    "id": 3,
+    "name": "Elara Necklace Set",
+    "category": "Necklaces",
+    "sku": "#ENV-NCK001",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 8490,
+    "sellPrice": 7490,
+    "stock": 18,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=300&q=80"
+  },
+  {
+    "id": 4,
+    "name": "Noor Pendant Chain",
+    "category": "Necklaces",
+    "sku": "#ENV-NCK002",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 3490,
+    "sellPrice": 2990,
+    "stock": 32,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80"
+  },
+  {
+    "id": 5,
+    "name": "Solène Tennis Bracelet",
+    "category": "Bracelets",
+    "sku": "#ENV-BRC001",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 4990,
+    "sellPrice": 4290,
+    "stock": 24,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80"
+  },
+  {
+    "id": 6,
+    "name": "Amaara Cocktail Ring",
+    "category": "Rings",
+    "sku": "#ENV-RNG001",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 3290,
+    "sellPrice": 2790,
+    "stock": 15,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80"
+  },
+  {
+    "id": 7,
+    "name": "Tara Sculpted Kada",
+    "category": "Kada & Bangles",
+    "sku": "#ENV-KAD001",
+    "createdAt": "Jan 01, 2024",
+    "regularPrice": 4490,
+    "sellPrice": 3890,
+    "stock": 0,
+    "status": "out Stock",
+    "image": "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80"
+  },
+  {
+    "id": 8,
+    "name": "Avni Everyday Mangalsutra",
+    "category": "Mangalsutra",
+    "sku": "#ENV-MNG001",
+    "createdAt": "Jan 02, 2024",
+    "regularPrice": 5200,
+    "sellPrice": 4590,
+    "stock": 20,
+    "status": "Published",
+    "image": "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=300&q=80"
+  },
+  {
+    "id": 9,
+    "name": "Veer Minimal Cuff",
+    "category": "Men’s Jewellery",
+    "sku": "#ENV-MEN001",
+    "createdAt": "Jan 02, 2024",
+    "regularPrice": 2990,
+    "sellPrice": 2490,
+    "stock": 30,
+    "status": "Draft",
+    "image": "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80"
+  },
+  {
+    "id": 10,
+    "name": "Arjun Signet Ring",
+    "category": "Men’s Jewellery",
+    "sku": "#ENV-MEN002",
+    "createdAt": "Jan 02, 2024",
+    "regularPrice": 3800,
+    "sellPrice": 3290,
+    "stock": 0,
+    "status": "Inactive",
+    "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80"
+  }
+]

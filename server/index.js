@@ -1,9 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pool, { testConnection } from './db.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FALLBACK_PRODUCTS_FILE = path.join(__dirname, 'products_fallback.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +20,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Real ENVIAAR Jewellery mock database fallback
-let mockProducts = [
+const initialMockProducts = [
   {
     id: 1,
     name: 'Aurelia Drop Earrings',
@@ -135,6 +142,31 @@ let mockProducts = [
     image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80'
   }
 ];
+
+function loadFallbackProducts() {
+  try {
+    if (fs.existsSync(FALLBACK_PRODUCTS_FILE)) {
+      const data = fs.readFileSync(FALLBACK_PRODUCTS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load products fallback file:', err.message);
+  }
+  return initialMockProducts;
+}
+
+function saveFallbackProducts(products) {
+  try {
+    fs.writeFileSync(FALLBACK_PRODUCTS_FILE, JSON.stringify(products, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Failed to save products fallback file:', err.message);
+  }
+}
+
+let mockProducts = loadFallbackProducts();
 
 // Admin Login Endpoint
 app.post('/api/admin/login', async (req, res) => {
@@ -537,6 +569,13 @@ app.post('/api/products', async (req, res) => {
     );
 
     productObj.id = result.insertId;
+    const existingIndex = mockProducts.findIndex(p => String(p.id) === String(productObj.id) || p.name.toLowerCase().trim() === productObj.name.toLowerCase().trim());
+    if (existingIndex >= 0) {
+      mockProducts[existingIndex] = { ...mockProducts[existingIndex], ...productObj };
+    } else {
+      mockProducts.unshift(productObj);
+    }
+    saveFallbackProducts(mockProducts);
     res.status(201).json(productObj);
   } catch (err) {
     console.warn('MySQL DB product insert fallback used:', err.message);
@@ -547,7 +586,7 @@ app.post('/api/products', async (req, res) => {
     } else {
       mockProducts.unshift(productObj);
     }
-
+    saveFallbackProducts(mockProducts);
     res.status(201).json(productObj);
   }
 });
@@ -562,20 +601,22 @@ app.put('/api/products/:id', async (req, res) => {
       `UPDATE products SET name = COALESCE(?, name), description = COALESCE(?, description), sell_price = COALESCE(?, sell_price), stock_quantity = COALESCE(?, stock_quantity), status = COALESCE(?, status) WHERE id = ?`,
       [name, description, sellPrice, stock, status, id]
     );
-    res.json({ message: 'Product updated successfully' });
   } catch (err) {
-    const p = mockProducts.find(item => item.id == id);
-    if (p) {
-      if (status) p.status = status;
-      if (name) p.name = name;
-      if (description) p.description = description;
-      if (sellPrice) p.sellPrice = sellPrice;
-      if (priceUSD !== undefined) p.priceUSD = priceUSD ? parseFloat(priceUSD) : undefined;
-      if (priceAED !== undefined) p.priceAED = priceAED ? parseFloat(priceAED) : undefined;
-      if (stock !== undefined) p.stock = stock;
-    }
-    res.json({ message: 'Product updated' });
+    console.warn('MySQL DB product update fallback used:', err.message);
   }
+
+  const p = mockProducts.find(item => item.id == id);
+  if (p) {
+    if (status) p.status = status;
+    if (name) p.name = name;
+    if (description) p.description = description;
+    if (sellPrice) p.sellPrice = sellPrice;
+    if (priceUSD !== undefined) p.priceUSD = priceUSD ? parseFloat(priceUSD) : undefined;
+    if (priceAED !== undefined) p.priceAED = priceAED ? parseFloat(priceAED) : undefined;
+    if (stock !== undefined) p.stock = stock;
+    saveFallbackProducts(mockProducts);
+  }
+  res.json({ message: 'Product updated' });
 });
 
 const deletedServerProductIds = new Set();
@@ -592,11 +633,13 @@ app.delete('/api/products', async (req, res) => {
 
   try {
     await pool.query(`DELETE FROM products WHERE id IN (?)`, [ids]);
-    res.json({ message: `${ids.length} products deleted successfully` });
   } catch (err) {
-    mockProducts = mockProducts.filter((p) => !ids.includes(p.id) && !ids.includes(String(p.id)));
-    res.json({ message: `${ids.length} products deleted` });
+    console.warn('MySQL DB product delete fallback used:', err.message);
   }
+
+  mockProducts = mockProducts.filter((p) => !ids.includes(p.id) && !ids.includes(String(p.id)));
+  saveFallbackProducts(mockProducts);
+  res.json({ message: `${ids.length} products deleted` });
 });
 
 // Real ENVIAAR Mock Orders

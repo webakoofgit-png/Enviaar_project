@@ -198,8 +198,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.warn("Backend API not reachable for storefront, using local custom products and fallback catalog");
       }
 
-      // Combine custom products created via Admin, API products, and initial static products with strict deduplication & deletion filtering
-      const allMerged = deduplicateProducts([...customProducts, ...convertedApi, ...initialProducts]);
+      // Combine API products, custom products created via Admin, and initial static products with strict deduplication & deletion filtering
+      const allMerged = deduplicateProducts([...convertedApi, ...customProducts, ...initialProducts]);
       const cleanList = filterDeletedProducts(allMerged);
       setProductList(cleanList);
     } finally {

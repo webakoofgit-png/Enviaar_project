@@ -25,6 +25,7 @@ import {
   saveCustomProduct,
   markProductsAsDeleted,
   filterDeletedProducts,
+  unmarkProductAsDeleted,
 } from "@/lib/productStorage";
 import { normalizeCategory } from "@/context/StoreContext";
 import type { Product as StoreProduct } from "@/types/store";
@@ -219,7 +220,7 @@ export function AdminProductsPage() {
           const data = await res.json();
           const seen = new Set<string>();
           const unique: Product[] = [];
-          for (const item of [...customItems, ...(Array.isArray(data) ? data : [])]) {
+          for (const item of [...(Array.isArray(data) ? data : []), ...customItems]) {
             const key = (item.name || "").toLowerCase().trim();
             if (key && !seen.has(key)) {
               seen.add(key);
