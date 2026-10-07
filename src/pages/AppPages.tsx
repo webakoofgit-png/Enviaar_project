@@ -67,7 +67,7 @@ function PageHero({ eyebrow, title, copy }: { eyebrow?: string; title: string; c
       <p className="text-xs uppercase tracking-[.2em] text-muted-foreground">
         {eyebrow ?? "ENVIAAR"}
       </p>
-      <h1 className="mt-3 text-3xl sm:text-5xl md:text-7xl">{title}</h1>
+      <h1 className="mt-3 text-3xl sm:text-5xl md:text-7xl text-[#ab8b5a]">{title}</h1>
       {copy && <p className="mx-auto mt-4 max-w-2xl text-xs sm:text-base text-muted-foreground px-2">{copy}</p>}
     </header>
   );
@@ -714,7 +714,7 @@ export function AboutPage() {
           <div className="flex items-center px-5 py-10 sm:px-8 sm:py-16 md:px-20">
             <div>
               <p className="text-xs uppercase tracking-[.18em] text-muted-foreground">{eyebrow}</p>
-              <h2 className="mt-3 sm:mt-5 text-3xl sm:text-5xl">{title}</h2>
+              <h2 className="text-[#ab8b5a] mt-3 sm:mt-5 text-3xl sm:text-5xl">{title}</h2>
               <p className="mt-4 sm:mt-6 max-w-lg text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{copy}</p>
             </div>
           </div>
