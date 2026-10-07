@@ -528,7 +528,7 @@ app.get('/api/products', async (req, res) => {
 
 // Add Product endpoint
 app.post('/api/products', async (req, res) => {
-  const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description } = req.body;
+  const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description, details, materialsFinish } = req.body;
 
   // Ensure image_url safely fits within standard MySQL VARCHAR(255) if it's a huge Base64 data string
   const safeImageUrl = (image && image.length < 500)
@@ -541,6 +541,8 @@ app.post('/api/products', async (req, res) => {
     category: category || 'Fine Jewellery',
     sku: sku || `#ENV-JWL${Math.floor(100 + Math.random() * 900)}`,
     description: description || 'A refined ENVIAAR piece made for effortless transitions.',
+    details: details || undefined,
+    materialsFinish: materialsFinish || undefined,
     createdAt: 'Just now',
     regularPrice: regularPrice || 4990.00,
     sellPrice: sellPrice || 4290.00,
@@ -594,7 +596,7 @@ app.post('/api/products', async (req, res) => {
 // Update Product
 app.put('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, sellPrice, priceUSD, priceAED, stock, status, description } = req.body;
+  const { name, sellPrice, priceUSD, priceAED, stock, status, description, details, materialsFinish } = req.body;
 
   try {
     await pool.query(
@@ -610,6 +612,8 @@ app.put('/api/products/:id', async (req, res) => {
     if (status) p.status = status;
     if (name) p.name = name;
     if (description) p.description = description;
+    if (details !== undefined) p.details = details;
+    if (materialsFinish !== undefined) p.materialsFinish = materialsFinish;
     if (sellPrice) p.sellPrice = sellPrice;
     if (priceUSD !== undefined) p.priceUSD = priceUSD ? parseFloat(priceUSD) : undefined;
     if (priceAED !== undefined) p.priceAED = priceAED ? parseFloat(priceAED) : undefined;

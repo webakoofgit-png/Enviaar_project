@@ -22,6 +22,8 @@ export type Product = {
   subcategory: string;
   material: string;
   finish: string;
+  details?: string | undefined;
+  materialsFinish?: string | undefined;
   price: number; // Base price in INR
   priceUSD?: number | undefined; // Optional custom USD price override
   priceAED?: number | undefined; // Optional custom AED price override

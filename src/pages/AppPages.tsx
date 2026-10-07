@@ -248,20 +248,25 @@ export function ProductPage({ slug }: { slug: string }) {
               Quality Checked
             </span>
           </div>
-          {["Product Details", "Materials & Finish"].map(
-            (x) => (
-              <details key={x} className="border-b py-4 sm:py-5">
-                <summary className="flex cursor-pointer list-none justify-between text-sm sm:text-base">
-                  {x}
-                  <ChevronDown size={16} />
-                </summary>
-                <p className="pt-3 text-xs sm:text-sm leading-6 text-muted-foreground">
-                  Thoughtfully finished, quality checked and packed with care. Store separately and
-                  keep away from perfumes and moisture.
-                </p>
-              </details>
-            ),
-          )}
+          <details className="border-b py-4 sm:py-5">
+            <summary className="flex cursor-pointer list-none justify-between text-sm sm:text-base font-medium">
+              Product Details
+              <ChevronDown size={16} />
+            </summary>
+            <p className="pt-3 text-xs sm:text-sm leading-6 text-muted-foreground whitespace-pre-line">
+              {product.details || product.description || "Thoughtfully finished, quality checked and packed with care. Store separately and keep away from perfumes and moisture."}
+            </p>
+          </details>
+
+          <details className="border-b py-4 sm:py-5">
+            <summary className="flex cursor-pointer list-none justify-between text-sm sm:text-base font-medium">
+              Materials & Finish
+              <ChevronDown size={16} />
+            </summary>
+            <p className="pt-3 text-xs sm:text-sm leading-6 text-muted-foreground whitespace-pre-line">
+              {product.materialsFinish || (product.material || product.finish ? `Crafted with ${product.material || "92.5 Sterling Silver"}, finished in ${product.finish || "18K Gold Plating"}. Anti-tarnish coated.` : "Thoughtfully finished, quality checked and packed with care. Store separately and keep away from perfumes and moisture.")}
+            </p>
+          </details>
         </div>
       </div>
       <ProductRail

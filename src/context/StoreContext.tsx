@@ -122,6 +122,8 @@ export function apiProductToStoreProduct(item: any): Product {
     subcategory: item.subcategory || item.category || "Jewellery",
     material: item.material || "92.5 Silver",
     finish: item.finish || "18K Gold Plated",
+    details: item.details || undefined,
+    materialsFinish: item.materialsFinish || undefined,
     price: Number(item.sellPrice || item.regularPrice || item.price || 0),
     priceUSD: item.priceUSD ? Number(item.priceUSD) : undefined,
     priceAED: item.priceAED ? Number(item.priceAED) : undefined,
