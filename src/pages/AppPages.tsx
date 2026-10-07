@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { ProductCard } from "@/components/store/ProductCard";
 import { CollectionPage } from "./CollectionPage";
@@ -315,7 +316,8 @@ function ProductRail({ title, list }: { title: string; list: Product[] }) {
 }
 
 export function CartPage() {
-  const { cart, updateQuantity, removeFromCart } = useStore();
+  const { cart, updateQuantity, removeFromCart, isLoggedIn, setAccountOpen } = useStore();
+  const navigate = useNavigate();
   const [coupon, setCoupon] = useState("");
   const [applied, setApplied] = useState(false);
   const subtotal = cart.reduce((s, x) => s + x.product.price * x.quantity, 0);
@@ -398,8 +400,20 @@ export function CartPage() {
             <strong>Total</strong>
             <strong>{money(subtotal - discount)}</strong>
           </div>
-          <Button asChild variant="luxury" size="lg" className="mt-6 sm:mt-7 w-full">
-            <Link to="/checkout">Proceed to Checkout</Link>
+          <Button
+            variant="luxury"
+            size="lg"
+            className="mt-6 sm:mt-7 w-full"
+            onClick={() => {
+              if (!isLoggedIn) {
+                toast.error("Please sign in or create an account to proceed with checkout.");
+                setAccountOpen(true);
+              } else {
+                navigate("/checkout");
+              }
+            }}
+          >
+            Proceed to Checkout
           </Button>
         </aside>
       </div>
@@ -416,7 +430,7 @@ function SummaryRow({ label, value, text }: { label: string; value?: number; tex
 }
 
 export function CheckoutPage() {
-  const { cart, user, formatAmount } = useStore();
+  const { cart, user, formatAmount, isLoggedIn, setAccountOpen } = useStore();
   const [step, setStep] = useState(0);
   const [placedOrderNumber, setPlacedOrderNumber] = useState("");
 
@@ -475,6 +489,34 @@ export function CheckoutPage() {
 
     setPlacedOrderNumber(generatedOrderNum);
   };
+
+  if (!isLoggedIn) {
+    return (
+      <>
+        <PageHero title="Checkout" eyebrow="SIGN IN REQUIRED" />
+        <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+          <div className="border border-amber-200/80 bg-amber-50/60 p-8 sm:p-12 rounded-2xl shadow-sm text-center space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-display text-amber-950">Sign In to Complete Your Order</h2>
+            <p className="text-sm sm:text-base text-amber-900/80 max-w-md mx-auto leading-relaxed">
+              You are browsing as a guest. Please sign in or create a free ENVIAAR account to place your order, enjoy secure checkout, and track your shipments.
+            </p>
+            <div className="pt-2">
+              <Button
+                variant="luxury"
+                size="lg"
+                onClick={() => {
+                  setAccountOpen(true);
+                  toast.info("Please sign in or create an account to proceed.");
+                }}
+              >
+                Sign In / Register to Order
+              </Button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (placedOrderNumber)
     return (

@@ -118,7 +118,8 @@ export function SearchOverlay() {
 }
 
 export function CartDrawer() {
-  const { cartOpen, setCartOpen, cart, updateQuantity, removeFromCart, formatAmount, formatProductPrice } = useStore();
+  const { cartOpen, setCartOpen, cart, updateQuantity, removeFromCart, formatAmount, formatProductPrice, isLoggedIn, setAccountOpen } = useStore();
+  const navigate = useNavigate();
   const subtotal = cart.reduce(
     (sum, item) => sum + (Number(item?.product?.price) || 0) * (item?.quantity || 1),
     0,
@@ -233,8 +234,19 @@ export function CartDrawer() {
                 <Button asChild variant="luxury-outline" onClick={() => setCartOpen(false)}>
                   <Link to="/cart">View Bag</Link>
                 </Button>
-                <Button asChild variant="luxury" onClick={() => setCartOpen(false)}>
-                  <Link to="/checkout">Checkout</Link>
+                <Button
+                  variant="luxury"
+                  onClick={() => {
+                    setCartOpen(false);
+                    if (!isLoggedIn) {
+                      toast.error("Please sign in or create an account to proceed with checkout.");
+                      setAccountOpen(true);
+                    } else {
+                      navigate("/checkout");
+                    }
+                  }}
+                >
+                  Checkout
                 </Button>
               </div>
             </div>
