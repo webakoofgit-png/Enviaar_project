@@ -992,27 +992,6 @@ export const detailedPolicies: Record<
       },
     ],
   },
-  "care-guide": {
-    title: "Jewellery Care Guide",
-    eyebrow: "MAINTENANCE",
-    sections: [
-      {
-        title: "Everyday Care",
-        content:
-          "Store your demi-fine jewellery in the provided ENVIAAR soft pouch to protect it from scratches and dust.",
-      },
-      {
-        title: "Storage & Protection",
-        content:
-          "Avoid direct contact with perfumes, hairsprays, sanitizers, and moisture to preserve stone clarity and gold plating.",
-      },
-      {
-        title: "Cleaning",
-        content:
-          "Gently wipe your jewellery with a clean, soft microfiber cloth after each wear to maintain its brilliant shine.",
-      },
-    ],
-  },
 };
 
 export function PolicyPage({

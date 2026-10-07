@@ -273,7 +273,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           </div>
           {[
             ["SHOP", "New Arrivals", "Earrings", "Necklaces", "Bracelets", "Rings", "Men’s"],
-            ["HELP", "Contact", "Shipping", "Returns", "Jewellery Care", "FAQs"],
+            ["HELP", "Contact", "Shipping", "Returns", "FAQs"],
             ["ABOUT", "Our Story", "Instagram"],
             ["LEGAL", "Privacy", "Terms"],
           ].map(([title, ...links]) => (
@@ -345,7 +345,6 @@ function footerPath(label: string) {
     Contact: "/contact",
     Shipping: "/shipping-policy",
     Returns: "/returns",
-    "Jewellery Care": "/care-guide",
     FAQs: "/contact",
     "Our Story": "/about",
     Instagram: "/",

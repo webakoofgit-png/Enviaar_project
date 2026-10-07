@@ -141,15 +141,6 @@ export default function App() {
                       />
                     }
                   />
-                  <Route
-                    path="/care-guide"
-                    element={
-                      <PolicyPage
-                        title={policies["care-guide"].title}
-                        sections={policies["care-guide"].sections}
-                      />
-                    }
-                  />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
