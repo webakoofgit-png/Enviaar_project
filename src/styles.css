@@ -159,7 +159,7 @@
     height: auto;
   }
 
-  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; word-break: break-word; }
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; word-break: break-word; color: #ab8b5a; }
   button, a, input, select, textarea { letter-spacing: 0; }
   ::selection { background: var(--color-accent); color: var(--color-accent-foreground); }
 }

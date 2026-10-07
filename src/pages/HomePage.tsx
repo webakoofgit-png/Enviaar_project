@@ -218,7 +218,7 @@ export function HomePage() {
         <div className="flex items-center bg-accent/40 px-5 py-12 sm:px-8 sm:py-16 md:px-20 border-t md:border-t-0 md:border-l border-border/60">
           <div>
             <p className="text-xs uppercase tracking-[.18em] text-muted-foreground font-medium">MEN’S COLLECTION</p>
-            <h2 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-6xl text-foreground font-display">ENVIAAR for Him</h2>
+            <h2 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-6xl text-[#ab8b5a] font-display">ENVIAAR for Him</h2>
             <p className="mt-4 sm:mt-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
               Bracelets, rings and quiet signatures for the modern man.
             </p>
