@@ -248,7 +248,7 @@ export function ProductPage({ slug }: { slug: string }) {
               Quality Checked
             </span>
           </div>
-          {["Product Details", "Materials & Finish", "Jewellery Care", "Shipping & Returns"].map(
+          {["Product Details", "Materials & Finish"].map(
             (x) => (
               <details key={x} className="border-b py-4 sm:py-5">
                 <summary className="flex cursor-pointer list-none justify-between text-sm sm:text-base">
