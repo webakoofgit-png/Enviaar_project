@@ -22,6 +22,12 @@ import { useStore } from "@/context/StoreContext";
 import { collectionInfo, images, money } from "@/data/store";
 import type { MediaItem, Product } from "@/types/store";
 import { saveOrder, type CustomerOrder } from "@/lib/orderStorage";
+import {
+  fetchAllReviews,
+  addProductReview,
+  getReviewsForProduct,
+  type Review,
+} from "@/lib/reviewStorage";
 
 const collectionPaths = new Set([
   "shop",
@@ -158,6 +164,34 @@ export function ProductPage({ slug }: { slug: string }) {
       navigate("/checkout");
     }
   };
+  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+
+  const loadReviews = async () => {
+    const data = await fetchAllReviews();
+    setAllReviews(data);
+  };
+
+  useEffect(() => {
+    loadReviews();
+    const handleUpdate = () => loadReviews();
+    window.addEventListener("enviaar_reviews_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("enviaar_reviews_updated", handleUpdate);
+    };
+  }, []);
+
+  const productReviews = useMemo(
+    () => getReviewsForProduct(product.id, allReviews),
+    [product.id, allReviews]
+  );
+
+  const avgRating = useMemo(() => {
+    if (productReviews.length === 0) return (product.rating || 4.8).toFixed(1);
+    const sum = productReviews.reduce((acc, r) => acc + r.rating, 0);
+    return (sum / productReviews.length).toFixed(1);
+  }, [productReviews, product.rating]);
+
   return (
     <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 md:px-10">
       <p className="mb-5 sm:mb-7 text-xs text-muted-foreground truncate">
@@ -204,7 +238,7 @@ export function ProductPage({ slug }: { slug: string }) {
           <p className="text-xs uppercase tracking-[.16em]">{product.badge ?? product.category}</p>
           <h1 className="mt-2 sm:mt-3 text-3xl sm:text-4xl md:text-5xl">{product.name}</h1>
           <div className="mt-3 sm:mt-4 flex items-center gap-2 text-sm">
-            <Star size={15} className="fill-current" /> {product.rating} · 128 reviews
+            <Star size={15} className="fill-current text-amber-500" /> {avgRating} · {productReviews.length} {productReviews.length === 1 ? "review" : "reviews"}
           </div>
           <p className="mt-4 sm:mt-6 text-xl sm:text-2xl font-medium">{formatProductPrice(product)}</p>
           <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{product.description}</p>
@@ -269,6 +303,17 @@ export function ProductPage({ slug }: { slug: string }) {
           </details>
         </div>
       </div>
+
+      {/* CUSTOMER REVIEWS & RATINGS SECTION */}
+      <ProductReviewsSection
+        product={product}
+        reviews={productReviews}
+        avgRating={avgRating}
+        isModalOpen={isReviewModalOpen}
+        setIsModalOpen={setIsReviewModalOpen}
+        onReviewAdded={loadReviews}
+      />
+
       <ProductRail
         title="You May Also Like"
         list={products.filter((p) => p.id !== product.id).slice(0, 4)}
@@ -1119,6 +1164,249 @@ function Empty({ title }: { title: string }) {
       <Button asChild variant="luxury-outline" className="mt-7">
         <Link to="/shop">Explore Jewellery</Link>
       </Button>
+    </div>
+  );
+}
+
+function ProductReviewsSection({
+  product,
+  reviews,
+  avgRating,
+  isModalOpen,
+  setIsModalOpen,
+  onReviewAdded,
+}: {
+  product: Product;
+  reviews: Review[];
+  avgRating: string;
+  isModalOpen: boolean;
+  setIsModalOpen: (open: boolean) => void;
+  onReviewAdded: () => void;
+}) {
+  const { user } = useStore();
+  const [ratingInput, setRatingInput] = useState(5);
+  const [authorName, setAuthorName] = useState(user?.name || "");
+  const [authorEmail, setAuthorEmail] = useState(user?.email || "");
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user?.name && !authorName) setAuthorName(user.name);
+    if (user?.email && !authorEmail) setAuthorEmail(user.email);
+  }, [user]);
+
+  const handleSubmitReview = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please enter your review text");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await addProductReview({
+        productId: product.id,
+        authorName: authorName || "Verified Buyer",
+        authorEmail: authorEmail,
+        rating: ratingInput,
+        title: title || "Wonderful Jewellery Piece",
+        comment: comment,
+      });
+
+      toast.success("Thank you! Your review has been posted successfully.");
+      setIsModalOpen(false);
+      setTitle("");
+      setComment("");
+      onReviewAdded();
+    } catch (err) {
+      toast.error("Failed to submit review");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-16 sm:mt-24 border-t pt-10 sm:pt-14">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-serif tracking-tight">Customer Reviews</h2>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Real feedback from verified ENVIAAR jewellery owners
+          </p>
+        </div>
+        <Button variant="luxury" onClick={() => setIsModalOpen(true)} className="self-start md:self-auto">
+          Write a Review
+        </Button>
+      </div>
+
+      {/* Ratings Breakdown Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-b">
+        <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-2xl text-center">
+          <div className="text-5xl font-bold font-serif">{avgRating}</div>
+          <div className="flex text-amber-500 mt-2 mb-1">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                className={`h-5 w-5 ${s <= Math.round(Number(avgRating)) ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground font-medium">
+            Based on {reviews.length} customer {reviews.length === 1 ? "review" : "reviews"}
+          </p>
+        </div>
+
+        <div className="md:col-span-2 space-y-2 flex flex-col justify-center">
+          {[5, 4, 3, 2, 1].map((stars) => {
+            const count = reviews.filter((r) => r.rating === stars).length;
+            const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+            return (
+              <div key={stars} className="flex items-center gap-3 text-xs">
+                <span className="w-12 font-medium flex items-center gap-1">
+                  {stars} <Star size={12} className="fill-current text-amber-500" />
+                </span>
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="w-10 text-right text-muted-foreground">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Reviews List */}
+      <div className="mt-8 space-y-6">
+        {reviews.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No reviews yet. Be the first to write a review for <span className="font-semibold text-foreground">{product.name}</span>!
+          </div>
+        ) : (
+          reviews.map((r) => (
+            <div key={r.id} className="p-5 border rounded-2xl space-y-2 hover:border-primary/30 transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">{r.authorName}</span>
+                  {r.verifiedPurchase && (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                      <ShieldCheck size={11} /> Verified Buyer
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">{r.createdAt}</span>
+              </div>
+              <div className="flex text-amber-500">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`h-4 w-4 ${s <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                  />
+                ))}
+              </div>
+              <h4 className="font-bold text-sm text-foreground pt-1">{r.title}</h4>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{r.comment}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* WRITE A REVIEW MODAL (TEXT ONLY) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-background rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 border max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 className="text-lg font-bold font-serif">Write a Review</h3>
+                <p className="text-xs text-muted-foreground">Share your experience with {product.name}</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              {/* Star Rating Picker */}
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Rating (1 - 5 Stars)</label>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingInput(star)}
+                      className="p-1 hover:scale-110 transition"
+                    >
+                      <Star
+                        className={`h-6 w-6 ${star <= ratingInput ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-xs font-bold text-muted-foreground">{ratingInput}.0 Stars</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Your Name</label>
+                <Input
+                  required
+                  placeholder="e.g. Priya Sharma"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Email Address (Optional)</label>
+                <Input
+                  type="email"
+                  placeholder="e.g. priya@example.com"
+                  value={authorEmail}
+                  onChange={(e) => setAuthorEmail(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Review Headline / Title</label>
+                <Input
+                  required
+                  placeholder="e.g. Absolutely stunning finish!"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Review Content (Text Only)</label>
+                <Textarea
+                  required
+                  rows={4}
+                  placeholder="Share details about the quality, shine, weight, packaging, or styling tips..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-800 dark:text-amber-300">
+                🔒 <strong>Notice:</strong> Only text reviews are accepted. Image and video uploads are disabled for security and store safety.
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button type="button" variant="luxury-outline" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="luxury" disabled={submitting}>
+                  {submitting ? "Posting..." : "Submit Review"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

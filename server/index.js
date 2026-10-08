@@ -11,9 +11,83 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const FALLBACK_PRODUCTS_FILE = path.join(__dirname, 'products_fallback.json');
+const FALLBACK_REVIEWS_FILE = path.join(__dirname, 'reviews_fallback.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Initial mock customer reviews fallback
+const initialMockReviews = [
+  {
+    id: "rev_101",
+    productId: "1",
+    authorName: "Ananya Sharma",
+    rating: 5,
+    title: "Exquisite Craftsmanship & Shine!",
+    comment: "The Aurelia Drop Earrings exceed expectations. The 18K gold plating has a rich, premium lustre and they feel so lightweight and comfortable all day long.",
+    createdAt: "2026-09-28",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev_102",
+    productId: "1",
+    authorName: "Rohan V.",
+    rating: 5,
+    title: "Perfect gift for anniversary",
+    comment: "Bought these for my wife and she absolutely loved them. Premium luxury packaging as well!",
+    createdAt: "2026-10-02",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev_103",
+    productId: "3",
+    authorName: "Priya Kapoor",
+    rating: 5,
+    title: "Stunning Elara Set",
+    comment: "Very elegant piece. The silver finish is flawless. Fast express delivery too.",
+    createdAt: "2026-10-04",
+    verifiedPurchase: true,
+  },
+  {
+    id: "rev_104",
+    productId: "6",
+    authorName: "Meera Nair",
+    rating: 4,
+    title: "Beautiful cocktail ring",
+    comment: "Looks gorgeous on hand. True to size and nicely finished.",
+    createdAt: "2026-10-05",
+    verifiedPurchase: true,
+  }
+];
+
+function loadFallbackReviews() {
+  try {
+    if (fs.existsSync(FALLBACK_REVIEWS_FILE)) {
+      const data = fs.readFileSync(FALLBACK_REVIEWS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load reviews fallback file:', err.message);
+  }
+  return initialMockReviews;
+}
+
+function saveFallbackReviews(reviews) {
+  try {
+    fs.writeFileSync(FALLBACK_REVIEWS_FILE, JSON.stringify(reviews, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Failed to save reviews fallback file:', err.message);
+  }
+}
+
+let mockReviews = loadFallbackReviews();
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -814,6 +888,62 @@ app.put('/api/orders/:id', async (req, res) => {
   }
 
   res.json({ success: true, message: `Order ${id} status updated to ${status}` });
+});
+
+// GET Reviews Endpoint
+app.get('/api/reviews', (req, res) => {
+  const { productId } = req.query;
+  if (productId) {
+    const filtered = mockReviews.filter(r => String(r.productId) === String(productId));
+    return res.json(filtered);
+  }
+  return res.json(mockReviews);
+});
+
+// POST Review Endpoint (Text-Only Reviews)
+app.post('/api/reviews', (req, res) => {
+  const { productId, authorName, authorEmail, rating, title, comment } = req.body;
+
+  if (!productId || !comment) {
+    return res.status(400).json({ error: 'Product ID and review comment are required.' });
+  }
+
+  const newReview = {
+    id: req.body.id || `rev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    productId: String(productId),
+    authorName: authorName ? String(authorName).trim() : 'Verified Buyer',
+    authorEmail: authorEmail ? String(authorEmail).trim() : '',
+    rating: Math.min(5, Math.max(1, parseInt(rating) || 5)),
+    title: title ? String(title).trim() : 'Great Jewellery Piece',
+    comment: String(comment).trim(),
+    createdAt: new Date().toISOString().split('T')[0],
+    verifiedPurchase: true
+  };
+
+  const existingIndex = mockReviews.findIndex(r => r.id === newReview.id);
+  if (existingIndex >= 0) {
+    mockReviews[existingIndex] = newReview;
+  } else {
+    mockReviews.unshift(newReview);
+  }
+
+  saveFallbackReviews(mockReviews);
+  return res.status(201).json({ success: true, review: newReview });
+});
+
+// DELETE Review Endpoint (Admin Review Deletion / Moderation)
+app.delete('/api/reviews/:id', (req, res) => {
+  const { id } = req.params;
+  const initialLength = mockReviews.length;
+  mockReviews = mockReviews.filter(r => String(r.id) !== String(id));
+
+  saveFallbackReviews(mockReviews);
+
+  if (mockReviews.length < initialLength) {
+    return res.json({ success: true, message: `Review ${id} deleted successfully.` });
+  } else {
+    return res.status(404).json({ error: `Review ${id} not found.` });
+  }
 });
 
 app.listen(PORT, () => {

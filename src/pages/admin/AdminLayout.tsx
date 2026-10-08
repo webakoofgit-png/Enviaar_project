@@ -12,6 +12,7 @@ import {
   BarChart3,
   Megaphone,
   Percent,
+  MessageSquare,
   Store,
   Monitor,
   ShoppingBag,
@@ -47,6 +48,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
     { label: "Marketing", path: "/admin/marketing", icon: Megaphone, hasSub: true },
     { label: "Discounts", path: "/admin/discounts", icon: Percent },
+    { label: "Reviews", path: "/admin/reviews", icon: MessageSquare },
   ];
 
   const salesChannels = [

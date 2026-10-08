@@ -26,6 +26,7 @@ import {
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminProductsPage } from "@/pages/admin/AdminProductsPage";
+import { AdminReviewsPage } from "@/pages/admin/AdminReviewsPage";
 import {
   AdminHome,
   AdminOrders,
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="marketing" element={<AdminMarketing />} />
             <Route path="discounts" element={<AdminDiscounts />} />
+            <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="*" element={<AdminHome />} />
           </Route>
 
