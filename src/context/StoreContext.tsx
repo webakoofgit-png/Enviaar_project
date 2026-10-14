@@ -170,7 +170,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [productList, setProductList] = useState<Product[]>(() => {
     const custom = getCustomProducts();
-    const merged = deduplicateProducts([...custom, ...initialProducts]);
+    const merged = deduplicateProducts(custom);
     return filterDeletedProducts(merged);
   });
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -201,8 +201,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.warn("Backend API not reachable for storefront, using local custom products and fallback catalog");
       }
 
-      // Combine API products, custom products created via Admin, and initial static products with strict deduplication & deletion filtering
-      const allMerged = deduplicateProducts([...convertedApi, ...customProducts, ...initialProducts]);
+      // Combine API products and custom products created via Admin
+      const allMerged = deduplicateProducts([...convertedApi, ...customProducts]);
       const cleanList = filterDeletedProducts(allMerged);
       setProductList(cleanList);
     } finally {

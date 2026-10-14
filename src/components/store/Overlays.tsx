@@ -5,7 +5,7 @@ import { Check, CheckCircle2, ChevronRight, Minus, Plus, Search, Sparkles, X } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStore } from "@/context/StoreContext";
-import { money, products } from "@/data/store";
+import { images, money } from "@/data/store";
 import { toast } from "sonner";
 
 const Backdrop = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
@@ -21,7 +21,7 @@ const Backdrop = ({ children, onClose }: { children: React.ReactNode; onClose: (
 );
 
 export function SearchOverlay() {
-  const { searchOpen, setSearchOpen } = useStore();
+  const { searchOpen, setSearchOpen, products } = useStore();
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const found = useMemo(
@@ -31,7 +31,7 @@ export function SearchOverlay() {
           `${p.name} ${p.category} ${p.material}`.toLowerCase().includes(query.toLowerCase()),
         )
         .slice(0, 4),
-    [query],
+    [query, products],
   );
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -588,7 +588,7 @@ export function PromoPopup() {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <img
-              src={products[2]?.image ?? ""}
+              src={images.festive}
               alt="ENVIAAR jewellery"
               className="hidden h-full min-h-96 w-full object-cover md:block"
             />
