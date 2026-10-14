@@ -21,48 +21,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Initial mock customer reviews fallback
-const initialMockReviews = [
-  {
-    id: "rev_101",
-    productId: "1",
-    authorName: "Ananya Sharma",
-    rating: 5,
-    title: "Exquisite Craftsmanship & Shine!",
-    comment: "The Aurelia Drop Earrings exceed expectations. The 18K gold plating has a rich, premium lustre and they feel so lightweight and comfortable all day long.",
-    createdAt: "2026-09-28",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_102",
-    productId: "1",
-    authorName: "Rohan V.",
-    rating: 5,
-    title: "Perfect gift for anniversary",
-    comment: "Bought these for my wife and she absolutely loved them. Premium luxury packaging as well!",
-    createdAt: "2026-10-02",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_103",
-    productId: "3",
-    authorName: "Priya Kapoor",
-    rating: 5,
-    title: "Stunning Elara Set",
-    comment: "Very elegant piece. The silver finish is flawless. Fast express delivery too.",
-    createdAt: "2026-10-04",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_104",
-    productId: "6",
-    authorName: "Meera Nair",
-    rating: 4,
-    title: "Beautiful cocktail ring",
-    comment: "Looks gorgeous on hand. True to size and nicely finished.",
-    createdAt: "2026-10-05",
-    verifiedPurchase: true,
-  }
-];
+const initialMockReviews = [];
 
 function loadFallbackReviews() {
   try {
@@ -292,58 +251,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Mock Customers Fallback List
-let mockCustomers = [
-  {
-    id: 1,
-    name: "vipul.m3011",
-    email: "vipul.m3011@gmail.com",
-    phone: "+91 98765 43210",
-    totalOrders: 1,
-    totalSpent: 2790.00,
-    tier: "VIP Circle",
-    createdAt: "2026-09-26"
-  },
-  {
-    id: 2,
-    name: "Aarav Sharma",
-    email: "aarav.sharma@example.com",
-    phone: "+91 98765 12345",
-    totalOrders: 4,
-    totalSpent: 18450.00,
-    tier: "VIP Circle",
-    createdAt: "2024-01-15"
-  },
-  {
-    id: 3,
-    name: "Priya Kapoor",
-    email: "priya.k@example.com",
-    phone: "+91 98123 45678",
-    totalOrders: 2,
-    totalSpent: 9280.00,
-    tier: "Member",
-    createdAt: "2024-02-10"
-  },
-  {
-    id: 4,
-    name: "Rohan Verma",
-    email: "rohan.v@example.com",
-    phone: "+91 99887 66554",
-    totalOrders: 5,
-    totalSpent: 24900.00,
-    tier: "VIP Circle",
-    createdAt: "2024-03-01"
-  },
-  {
-    id: 5,
-    name: "Ananya Roy",
-    email: "ananya.roy@example.com",
-    phone: "+91 97766 55443",
-    totalOrders: 1,
-    totalSpent: 3490.00,
-    tier: "New Member",
-    createdAt: "2024-04-12"
-  }
-];
+let mockCustomers = [];
 
 // Get Customers Endpoint
 app.get('/api/customers', async (req, res) => {
@@ -358,14 +266,12 @@ app.get('/api/customers', async (req, res) => {
       ORDER BY c.id DESC
     `);
 
-    if (rows.length > 0) {
-      const formatted = rows.map((r) => ({
-        ...r,
-        tier: (r.totalSpent || 0) >= 10000 ? "VIP Circle" : "Member",
-        createdAt: r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : "2024-01-01"
-      }));
-      return res.json(formatted);
-    }
+    const formatted = rows.map((r) => ({
+      ...r,
+      tier: (r.totalSpent || 0) >= 10000 ? "VIP Circle" : "Member",
+      createdAt: r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : "2024-01-01"
+    }));
+    return res.json(formatted);
   } catch (err) {
     console.warn("MySQL DB customers fetch fallback mode");
   }
@@ -399,33 +305,33 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     const [pRows] = await pool.query('SELECT COUNT(*) AS total FROM products');
-    const [rRows] = await pool.query('SELECT COALESCE(SUM(total_amount), 84320) AS total FROM orders');
+    const [rRows] = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total FROM orders');
     const [oRows] = await pool.query('SELECT COUNT(*) AS total FROM orders');
     const [cRows] = await pool.query('SELECT COUNT(*) AS total FROM customers');
 
     res.json({
       totalProducts: pRows[0]?.total || mockProducts.length,
-      totalRevenue: parseFloat(rRows[0]?.total || 84320.00),
-      totalOrders: oRows[0]?.total || 142,
-      totalCustomers: cRows[0]?.total || 3240,
+      totalRevenue: parseFloat(rRows[0]?.total || 0.00),
+      totalOrders: oRows[0]?.total || 0,
+      totalCustomers: cRows[0]?.total || 0,
       trends: {
-        products: '+4.2%',
-        revenue: '+12.5%',
-        orders: '-1.4%',
-        customers: '+2.1%'
+        products: '+0.0%',
+        revenue: '+0.0%',
+        orders: '+0.0%',
+        customers: '+0.0%'
       }
     });
   } catch (err) {
     res.json({
       totalProducts: mockProducts.length,
-      totalRevenue: 84320.00,
-      totalOrders: 142,
-      totalCustomers: 3240,
+      totalRevenue: 0.00,
+      totalOrders: 0,
+      totalCustomers: 0,
       trends: {
-        products: '+4.2%',
-        revenue: '+12.5%',
-        orders: '-1.4%',
-        customers: '+2.1%'
+        products: '+0.0%',
+        revenue: '+0.0%',
+        orders: '+0.0%',
+        customers: '+0.0%'
       }
     });
   }
@@ -600,41 +506,7 @@ app.delete('/api/products', async (req, res) => {
 });
 
 // Real ENVIAAR Mock Orders
-let mockOrders = [
-  {
-    id: "ord_1001",
-    orderNumber: "ENV-2026-1042",
-    customerName: "Aarav Sharma",
-    customerEmail: "aarav.sharma@example.com",
-    customerPhone: "+91 98765 43210",
-    shippingAddress: "Flat 402, Royal Palms, Bandra West, Mumbai, Maharashtra - 400050",
-    paymentMethod: "UPI (Google Pay)",
-    paymentStatus: "Paid",
-    status: "Processing",
-    totalAmount: 7980,
-    items: [
-      { id: "1", name: "Aurelia Drop Earrings", price: 3490, quantity: 1, image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80", finish: "Gold" },
-      { id: "5", name: "Solène Tennis Bracelet", price: 4490, quantity: 1, image: "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80", finish: "Silver" }
-    ],
-    createdAt: "2026-09-24 14:30:00"
-  },
-  {
-    id: "ord_1002",
-    orderNumber: "ENV-2026-1041",
-    customerName: "Priya Kapoor",
-    customerEmail: "priya.k@example.com",
-    customerPhone: "+91 98123 45678",
-    shippingAddress: "Villa 12, Jubilee Hills, Hyderabad, Telangana - 500033",
-    paymentMethod: "Credit Card",
-    paymentStatus: "Paid",
-    status: "Shipped",
-    totalAmount: 11980,
-    items: [
-      { id: "3", name: "Elara Necklace Set", price: 7490, quantity: 1, image: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=300&q=80", finish: "Rose Gold" }
-    ],
-    createdAt: "2026-09-22 10:15:00"
-  }
-];
+let mockOrders = [];
 
 // Get Orders API Endpoint
 app.get('/api/orders', async (req, res) => {
@@ -665,9 +537,7 @@ app.get('/api/orders', async (req, res) => {
     sql += ` ORDER BY o.id DESC`;
     const [rows] = await pool.query(sql, params);
 
-    if (rows.length > 0) {
-      return res.json(rows);
-    }
+    return res.json(rows);
   } catch (err) {
     console.warn("MySQL DB order fetch fallback mode");
   }

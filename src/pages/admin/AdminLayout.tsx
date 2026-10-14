@@ -27,12 +27,7 @@ interface AdminLayoutProps {
   children?: React.ReactNode;
 }
 
-const sampleNotifications = [
-  { id: 1, title: "New order received", desc: "Order #1042 — ₹3,200 from Priya S.", time: "2 min ago", read: false },
-  { id: 2, title: "New review posted", desc: "5★ review on Gold Hoop Earrings", time: "14 min ago", read: false },
-  { id: 3, title: "Low stock alert", desc: "Rani Haar Necklace — only 2 left", time: "1 hr ago", read: true },
-  { id: 4, title: "New customer signup", desc: "Aisha M. created an account", time: "3 hr ago", read: true },
-];
+const sampleNotifications: any[] = [];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
@@ -66,9 +61,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     navigate("/admin/login", { replace: true });
   };
 
-  const mainNavItems = [
+  interface NavItem {
+    label: string;
+    path: string;
+    icon: any;
+    badge?: string;
+    hasSub?: boolean;
+  }
+
+  const mainNavItems: NavItem[] = [
     { label: "Home", path: "/admin", icon: Home },
-    { label: "Orders", path: "/admin/orders", icon: ShoppingCart, badge: "1" },
+    { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
     { label: "Products", path: "/admin/products", icon: Package },
     { label: "Customers", path: "/admin/customers", icon: Users },
     { label: "Content", path: "/admin/content", icon: FileText },
@@ -278,32 +281,38 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     )}
                   </div>
                   <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-                    {notifications.map((n) => (
-                      <li
-                        key={n.id}
-                        onClick={() =>
-                          setNotifications((prev) =>
-                            prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
-                          )
-                        }
-                        className={`px-4 py-3 cursor-pointer hover:bg-slate-50 transition ${
-                          !n.read ? "bg-amber-50/60" : ""
-                        }`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          <span
-                            className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
-                              !n.read ? "bg-amber-500" : "bg-slate-200"
-                            }`}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-slate-800 truncate">{n.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.desc}</p>
-                            <p className="text-[10px] text-slate-400 mt-1">{n.time}</p>
-                          </div>
-                        </div>
+                    {notifications.length === 0 ? (
+                      <li className="px-4 py-8 text-center text-xs text-slate-400">
+                        No new notifications
                       </li>
-                    ))}
+                    ) : (
+                      notifications.map((n) => (
+                        <li
+                          key={n.id}
+                          onClick={() =>
+                            setNotifications((prev) =>
+                              prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
+                            )
+                          }
+                          className={`px-4 py-3 cursor-pointer hover:bg-slate-50 transition ${
+                            !n.read ? "bg-amber-50/60" : ""
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <span
+                              className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
+                                !n.read ? "bg-amber-500" : "bg-slate-200"
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-800 truncate">{n.title}</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.desc}</p>
+                              <p className="text-[10px] text-slate-400 mt-1">{n.time}</p>
+                            </div>
+                          </div>
+                        </li>
+                      ))
+                    )}
                   </ul>
                   <div className="px-4 py-2.5 border-t border-slate-100 text-center">
                     <span className="text-[11px] text-slate-400">All caught up ✓</span>

@@ -1,3 +1,4 @@
+import { useStore } from "@/context/StoreContext";
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -60,6 +61,39 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/config/api";
 
 export function AdminHome() {
+  const { products } = useStore();
+  const [stats, setStats] = useState({
+    totalProducts: products.length,
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalCustomers: 0,
+  });
+
+  useEffect(() => {
+    const savedOrders = getSavedOrders();
+    const localRev = savedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    setStats({
+      totalProducts: products.length,
+      totalOrders: savedOrders.length,
+      totalRevenue: localRev,
+      totalCustomers: 0,
+    });
+
+    fetch(`${API_BASE_URL}/api/dashboard/stats`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setStats({
+            totalProducts: data.totalProducts ?? products.length,
+            totalOrders: Math.max(data.totalOrders || 0, savedOrders.length),
+            totalRevenue: Math.max(data.totalRevenue || 0, localRev),
+            totalCustomers: data.totalCustomers || 0,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [products.length]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -71,7 +105,9 @@ export function AdminHome() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between text-slate-900">
             <Package className="h-6 w-6 text-slate-900" />
-            <span className="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">10 Items</span>
+            <span className="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+              {stats.totalProducts} {stats.totalProducts === 1 ? "Item" : "Items"}
+            </span>
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">Manage Products</h3>
@@ -88,7 +124,9 @@ export function AdminHome() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between text-blue-600">
             <ShoppingCart className="h-6 w-6" />
-            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">142 Orders</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              {stats.totalOrders} {stats.totalOrders === 1 ? "Order" : "Orders"}
+            </span>
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">Orders Pipeline</h3>
@@ -105,7 +143,9 @@ export function AdminHome() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between text-emerald-600">
             <BarChart3 className="h-6 w-6" />
-            <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">+12.5% Growth</span>
+            <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+              ₹{stats.totalRevenue.toLocaleString("en-IN")} Revenue
+            </span>
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">Store Analytics</h3>
@@ -123,18 +163,40 @@ export function AdminHome() {
   );
 }
 
-// Chart Data for Monthly Growth & Sales Breakdown
-const monthlySalesData = [
-  { month: "Jan", revenue: 42000, orders: 110, earrings: 18000, necklaces: 14000, rings: 10000 },
-  { month: "Feb", revenue: 54000, orders: 135, earrings: 22000, necklaces: 18000, rings: 14000 },
-  { month: "Mar", revenue: 48000, orders: 120, earrings: 20000, necklaces: 16000, rings: 12000 },
-  { month: "Apr", revenue: 68000, orders: 165, earrings: 28000, necklaces: 22000, rings: 18000 },
-  { month: "May", revenue: 62000, orders: 150, earrings: 25000, necklaces: 21000, rings: 16000 },
-  { month: "Jun", revenue: 84320, orders: 198, earrings: 34000, necklaces: 28000, rings: 22320 },
-  { month: "Jul", revenue: 96500, orders: 225, earrings: 38000, necklaces: 33000, rings: 25500 },
-];
-
 export function AdminAnalytics() {
+  const [orders, setOrders] = useState<CustomerOrder[]>(() => getSavedOrders());
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/orders`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: any) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setOrders(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0), [orders]);
+  const aov = useMemo(() => (orders.length ? Math.round(totalRevenue / orders.length) : 0), [orders, totalRevenue]);
+
+  const currentMonthName = new Date().toLocaleString("en-US", { month: "short" });
+  const monthlySalesData = useMemo(() => {
+    if (orders.length === 0) {
+      return [{ month: currentMonthName, revenue: 0, orders: 0, earrings: 0, necklaces: 0, rings: 0 }];
+    }
+    const monthMap = new Map<string, any>();
+    orders.forEach((o) => {
+      const d = o.createdAt ? new Date(o.createdAt) : new Date();
+      const m = isNaN(d.getTime()) ? currentMonthName : d.toLocaleString("en-US", { month: "short" });
+      const curr = monthMap.get(m) || { month: m, revenue: 0, orders: 0, earrings: 0, necklaces: 0, rings: 0 };
+      curr.revenue += o.totalAmount || 0;
+      curr.orders += 1;
+      monthMap.set(m, curr);
+    });
+    return Array.from(monthMap.values());
+  }, [orders, currentMonthName]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -149,9 +211,12 @@ export function AdminAnalytics() {
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs">
             <Calendar className="h-3.5 w-3.5 text-slate-400" />
-            2024 YTD Growth
+            Live Store Trajectory
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition shadow-sm">
+          <button
+            onClick={() => toast.success("Analytics summary downloaded.")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition shadow-sm"
+          >
             <Download className="h-3.5 w-3.5 text-amber-300" />
             Download Report
           </button>
@@ -165,10 +230,9 @@ export function AdminAnalytics() {
             <span>Total Sales Revenue</span>
             <DollarSign className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">₹84,320.00</div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>+12.5% vs last month</span>
+          <div className="text-2xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString("en-IN")}</div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+            <span>Recorded customer orders</span>
           </div>
         </div>
 
@@ -177,10 +241,9 @@ export function AdminAnalytics() {
             <span>Store Visitors</span>
             <Eye className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">24,580</div>
-          <div className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>+18.2% new visitors</span>
+          <div className="text-2xl font-extrabold text-slate-900">0</div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+            <span>Live store traffic</span>
           </div>
         </div>
 
@@ -189,10 +252,9 @@ export function AdminAnalytics() {
             <span>Conversion Rate</span>
             <Percent className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">3.84%</div>
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>+0.6% improvement</span>
+          <div className="text-2xl font-extrabold text-slate-900">0.0%</div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+            <span>Order conversion rate</span>
           </div>
         </div>
 
@@ -201,10 +263,9 @@ export function AdminAnalytics() {
             <span>Avg Order Value (AOV)</span>
             <ShoppingBag className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">₹3,480.00</div>
+          <div className="text-2xl font-extrabold text-slate-900">₹{aov.toLocaleString("en-IN")}</div>
           <div className="flex items-center gap-1.5 text-xs text-purple-600 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>+5.1% per order</span>
+            <span>Per fulfilled order</span>
           </div>
         </div>
       </div>
@@ -214,7 +275,7 @@ export function AdminAnalytics() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-base font-bold text-slate-900">Sales & Revenue Trajectory</h2>
-            <p className="text-xs text-slate-400">Monthly gross sales growth trajectory across 2024 YTD</p>
+            <p className="text-xs text-slate-400">Monthly gross sales trajectory across store history</p>
           </div>
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600">
             <div className="flex items-center gap-2">
@@ -222,7 +283,7 @@ export function AdminAnalytics() {
               <span>Total Revenue (₹)</span>
             </div>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
-              +129.7% Growth YTD
+              ₹{totalRevenue.toLocaleString("en-IN")} Total
             </span>
           </div>
         </div>
@@ -378,15 +439,7 @@ export function AdminOrders() {
               paymentStatus: pStatus,
               status: status,
               totalAmount: Number(apiO.totalAmount || match?.totalAmount || 0),
-              items: match?.items || [
-                {
-                  id: "1",
-                  name: "Aurelia Drop Earrings",
-                  price: 3490,
-                  quantity: 1,
-                  image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80",
-                },
-              ],
+              items: match?.items || (Array.isArray(apiO.items) ? apiO.items : []),
               createdAt: apiO.createdAt || match?.createdAt || "Just now",
             };
           });
@@ -916,66 +969,26 @@ export function AdminCustomers() {
       console.warn("Backend API offline for customers, using fallback customer directory");
     }
 
-    // Default Fallback Initial Customers
-    const fallbackList = [
-      {
-        id: "cust_1",
-        name: "vipul.m3011",
-        email: "vipul.m3011@gmail.com",
-        phone: "+91 98765 43210",
-        totalOrders: 1,
-        totalSpent: 2790,
-        tier: "VIP Circle",
-        createdAt: "2026-09-26",
-        orders: savedOrders.filter((o) => o.customerEmail?.toLowerCase().includes("vipul")),
-      },
-      {
-        id: "cust_2",
-        name: "Aarav Sharma",
-        email: "aarav.sharma@example.com",
-        phone: "+91 98765 12345",
-        totalOrders: 4,
-        totalSpent: 18450,
-        tier: "VIP Circle",
-        createdAt: "2024-01-15",
-        orders: savedOrders.filter((o) => o.customerEmail?.toLowerCase().includes("aarav")),
-      },
-      {
-        id: "cust_3",
-        name: "Priya Kapoor",
-        email: "priya.k@example.com",
-        phone: "+91 98123 45678",
-        totalOrders: 2,
-        totalSpent: 9280,
-        tier: "Repeat Buyer",
-        createdAt: "2024-02-10",
-        orders: savedOrders.filter((o) => o.customerEmail?.toLowerCase().includes("priya")),
-      },
-      {
-        id: "cust_4",
-        name: "Rohan Verma",
-        email: "rohan.v@example.com",
-        phone: "+91 99887 66554",
-        totalOrders: 5,
-        totalSpent: 24900,
-        tier: "VIP Circle",
-        createdAt: "2024-03-01",
-        orders: [],
-      },
-      {
-        id: "cust_5",
-        name: "Ananya Roy",
-        email: "ananya.roy@example.com",
-        phone: "+91 97766 55443",
-        totalOrders: 1,
-        totalSpent: 3490,
-        tier: "Member",
-        createdAt: "2024-04-12",
-        orders: [],
-      },
-    ];
+    // Default: derive from saved orders if any exist, else empty
+    const derivedFromOrders: any[] = [];
+    customerOrderStats.forEach((stats, email) => {
+      if (email) {
+        const firstOrder = stats.orders[0];
+        derivedFromOrders.push({
+          id: `cust_${firstOrder?.id || Date.now()}`,
+          name: firstOrder?.customerName || email.split("@")[0] || "Customer",
+          email: email,
+          phone: firstOrder?.customerPhone || "",
+          totalOrders: stats.count,
+          totalSpent: stats.spent,
+          tier: stats.spent >= 10000 ? "VIP Circle" : stats.count > 1 ? "Repeat Buyer" : "Member",
+          createdAt: firstOrder?.createdAt ? firstOrder.createdAt.split(" ")[0] : new Date().toISOString().split("T")[0],
+          orders: stats.orders,
+        });
+      }
+    });
 
-    setCustomers(fallbackList);
+    setCustomers(derivedFromOrders);
     setLoading(false);
   };
 
@@ -1813,16 +1826,48 @@ export function AdminContent() {
 
 export function AdminFinances() {
   const [filterGateway, setFilterGateway] = useState<string>("All");
+  const [orders, setOrders] = useState<CustomerOrder[]>(() => getSavedOrders());
 
-  const transactions = [
-    { id: "TXN-994821", orderId: "ENV-2026-8941", customer: "Priya Sharma", gateway: "Razorpay (UPI)", gross: 6999, fee: 140, net: 6859, status: "Settled", date: "2026-09-26" },
-    { id: "TXN-994820", orderId: "ENV-2026-7832", customer: "Rahul Verma", gateway: "Stripe (Credit Card)", gross: 12499, fee: 250, net: 12249, status: "Settled", date: "2026-09-25" },
-    { id: "TXN-994819", orderId: "ENV-2026-6120", customer: "Ananya Roy", gateway: "Cash on Delivery", gross: 3499, fee: 0, net: 3499, status: "Pending Payout", date: "2026-09-24" },
-    { id: "TXN-994818", orderId: "ENV-2026-5501", customer: "Vikram Malhotra", gateway: "Razorpay (NetBanking)", gross: 18999, fee: 380, net: 18619, status: "Settled", date: "2026-09-24" },
-    { id: "TXN-994817", orderId: "ENV-2026-4432", customer: "Neha Kapoor", gateway: "Stripe (Apple Pay)", gross: 8999, fee: 180, net: 8819, status: "Processing", date: "2026-09-23" },
-  ];
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/orders`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: any) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setOrders(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const transactions = useMemo(() => {
+    return orders.map((o) => {
+      const isCOD = (o.paymentMethod || "").toLowerCase().includes("cash") || (o.paymentMethod || "").toLowerCase().includes("cod");
+      const feeRate = isCOD ? 0 : 0.02;
+      const fee = Math.round((o.totalAmount || 0) * feeRate);
+      return {
+        id: `TXN-${o.orderNumber?.replace(/[^0-9]/g, "") || o.id?.slice(-6) || "001"}`,
+        orderId: o.orderNumber || `ENV-${o.id}`,
+        customer: o.customerName || "Customer",
+        gateway: o.paymentMethod || "UPI",
+        gross: o.totalAmount || 0,
+        fee: fee,
+        net: (o.totalAmount || 0) - fee,
+        status: o.paymentStatus === "Paid" ? "Settled" : "Pending Payout",
+        date: o.createdAt ? o.createdAt.split(" ")[0] : new Date().toISOString().split("T")[0],
+      };
+    });
+  }, [orders]);
 
   const filtered = transactions.filter(t => filterGateway === "All" || t.gateway.includes(filterGateway));
+
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0), [orders]);
+  const netMargin = useMemo(() => Math.round(totalRevenue * 0.7), [totalRevenue]);
+  const pendingPayouts = useMemo(() => {
+    return orders
+      .filter((o) => o.paymentStatus !== "Paid")
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  }, [orders]);
+  const gstCollected = useMemo(() => Math.round(totalRevenue * 0.18), [totalRevenue]);
 
   return (
     <div className="space-y-6">
@@ -1848,9 +1893,9 @@ export function AdminFinances() {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Sales Revenue</span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><DollarSign className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹4,87,250</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString("en-IN")}</p>
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" /> +18.4% vs last month
+            Recorded store orders
           </div>
         </div>
 
@@ -1859,7 +1904,7 @@ export function AdminFinances() {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Profit Margin</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><BarChart3 className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹3,41,075</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹{netMargin.toLocaleString("en-IN")}</p>
           <p className="text-xs text-slate-500 font-medium">70.0% estimated net margin</p>
         </div>
 
@@ -1868,8 +1913,8 @@ export function AdminFinances() {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payouts</span>
             <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Clock className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹48,200</p>
-          <p className="text-xs text-amber-700 font-medium">Scheduled for Sept 28, 2026</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹{pendingPayouts.toLocaleString("en-IN")}</p>
+          <p className="text-xs text-amber-700 font-medium">Unsettled orders</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
@@ -1877,7 +1922,7 @@ export function AdminFinances() {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxes / GST Collected</span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><CreditCard className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹87,705</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹{gstCollected.toLocaleString("en-IN")}</p>
           <p className="text-xs text-slate-500 font-medium">18% GST slab accounting</p>
         </div>
       </div>
@@ -1886,11 +1931,11 @@ export function AdminFinances() {
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-xs font-bold tracking-widest text-amber-400 uppercase">Automated Payout Schedule</span>
-          <h3 className="text-lg font-bold mt-1">Next Settlement Batch: ₹32,400</h3>
-          <p className="text-xs text-slate-300 mt-0.5">Razorpay & Stripe direct deposit into ENVIAAR HDFC Operating Account (Ending in *8941)</p>
+          <h3 className="text-lg font-bold mt-1">Next Settlement Batch: ₹{(totalRevenue - pendingPayouts).toLocaleString("en-IN")}</h3>
+          <p className="text-xs text-slate-300 mt-0.5">Razorpay & Stripe direct deposit into ENVIAAR Operating Account</p>
         </div>
         <button
-          onClick={() => toast.success("Payout payout sync refreshed successfully!")}
+          onClick={() => toast.success("Payout sync refreshed successfully!")}
           className="px-4 py-2 text-xs font-bold bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition shadow-xs"
         >
           Instant Payout Sync
@@ -1932,38 +1977,46 @@ export function AdminFinances() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {filtered.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 px-4 font-mono font-bold text-slate-900">{t.id}</td>
-                  <td className="py-3 px-4 text-blue-600 font-semibold">{t.orderId}</td>
-                  <td className="py-3 px-4 font-semibold text-slate-900">{t.customer}</td>
-                  <td className="py-3 px-4">{t.gateway}</td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-900">₹{t.gross.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-right text-rose-600">₹{t.fee}</td>
-                  <td className="py-3 px-4 text-right font-bold text-emerald-700">₹{t.net.toLocaleString()}</td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        t.status === "Settled"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : t.status === "Processing"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {t.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => toast.info(`Downloading Tax Invoice for ${t.id}`)}
-                      className="text-xs font-bold text-slate-700 hover:text-amber-600 underline"
-                    >
-                      Invoice
-                    </button>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
+                    No financial transactions recorded yet. Real gateway settlements will appear here as orders are placed.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{t.id}</td>
+                    <td className="py-3 px-4 text-blue-600 font-semibold">{t.orderId}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-900">{t.customer}</td>
+                    <td className="py-3 px-4">{t.gateway}</td>
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">₹{t.gross.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-rose-600">₹{t.fee}</td>
+                    <td className="py-3 px-4 text-right font-bold text-emerald-700">₹{t.net.toLocaleString()}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                          t.status === "Settled"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : t.status === "Processing"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => toast.info(`Downloading Tax Invoice for ${t.id}`)}
+                        className="text-xs font-bold text-slate-700 hover:text-amber-600 underline"
+                      >
+                        Invoice
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -1973,12 +2026,7 @@ export function AdminFinances() {
 }
 
 export function AdminMarketing() {
-  const [campaigns, setCampaigns] = useState([
-    { id: "1", name: "Diwali Fest Royal Collection Showcase", type: "Email Newsletter", audience: "VIP Circle", sent: "4,500", openRate: "48.2%", ctr: "14.1%", status: "Active" },
-    { id: "2", name: "New Customer 10% Welcome Series", type: "Automated Email", audience: "New Members", sent: "1,200", openRate: "52.0%", ctr: "18.5%", status: "Active" },
-    { id: "3", name: "Festive Season Flash Offer SMS", type: "SMS Alert", audience: "All Customers", sent: "8,900", openRate: "92.0%", ctr: "8.4%", status: "Scheduled" },
-    { id: "4", name: "Abandoned Cart Luxury Reminder", type: "Automated Trigger", audience: "Cart Abandoners", sent: "410", openRate: "61.3%", ctr: "22.0%", status: "Active" },
-  ]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: "", type: "Email Newsletter", audience: "All Customers" });
@@ -2040,19 +2088,19 @@ export function AdminMarketing() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Impressions</span>
-          <p className="text-2xl font-extrabold text-slate-900">45,010</p>
+          <p className="text-2xl font-extrabold text-slate-900">0</p>
           <p className="text-xs text-slate-500 font-medium">Emails & SMS delivered</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Campaign Revenue</span>
-          <p className="text-2xl font-extrabold text-slate-900">₹1,24,500</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹0</p>
           <p className="text-xs text-emerald-600 font-semibold">+24.5% conversion rate</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Open Rate</span>
-          <p className="text-2xl font-extrabold text-slate-900">51.4%</p>
+          <p className="text-2xl font-extrabold text-slate-900">0.0%</p>
           <p className="text-xs text-blue-600 font-semibold">Industry benchmark 22%</p>
         </div>
       </div>
@@ -2079,7 +2127,14 @@ export function AdminMarketing() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {campaigns.map((c) => (
+              {campaigns.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                    No marketing campaigns created yet. Click "Create New Campaign" to launch a campaign.
+                  </td>
+                </tr>
+              ) : (
+                campaigns.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/80 transition">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{c.name}</td>
                   <td className="py-3.5 px-4 text-slate-600">{c.type}</td>
@@ -2109,7 +2164,8 @@ export function AdminMarketing() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -2210,10 +2266,10 @@ function getSavingsAmount(type: string, value: string, minSpendStr: string): str
 
 export function AdminDiscounts() {
   const [coupons, setCoupons] = useState([
-    { id: "1", code: "ENVIAAR10", type: "Percentage", value: "10% OFF", minSpend: "₹1,999", usage: "142 / 500", status: "Active" },
-    { id: "2", code: "WELCOME15", type: "Percentage", value: "15% OFF", minSpend: "₹2,499", usage: "89 / 200", status: "Active" },
-    { id: "3", code: "ROYALFEST", type: "Fixed Amount", value: "₹1,000 OFF", minSpend: "₹8,000", usage: "45 / 100", status: "Active" },
-    { id: "4", code: "FREESHIP", type: "Free Shipping", value: "100% Free Express Delivery", minSpend: "₹999", usage: "310 / 1000", status: "Active" },
+    { id: "1", code: "ENVIAAR10", type: "Percentage", value: "10% OFF", minSpend: "₹1,999", usage: "0 / 500", status: "Active" },
+    { id: "2", code: "WELCOME15", type: "Percentage", value: "15% OFF", minSpend: "₹2,499", usage: "0 / 200", status: "Active" },
+    { id: "3", code: "ROYALFEST", type: "Fixed Amount", value: "₹1,000 OFF", minSpend: "₹8,000", usage: "0 / 100", status: "Active" },
+    { id: "4", code: "FREESHIP", type: "Free Shipping", value: "100% Free Express Delivery", minSpend: "₹999", usage: "0 / 1000", status: "Active" },
   ]);
 
   const [showModal, setShowModal] = useState(false);
@@ -2276,19 +2332,19 @@ export function AdminDiscounts() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Redemptions</span>
-          <p className="text-2xl font-extrabold text-slate-900">586 Uses</p>
+          <p className="text-2xl font-extrabold text-slate-900">0 Uses</p>
           <p className="text-xs text-slate-500 font-medium">Across all orders</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Discount Value Granted</span>
-          <p className="text-2xl font-extrabold text-slate-900">₹84,500</p>
+          <p className="text-2xl font-extrabold text-slate-900">₹0</p>
           <p className="text-xs text-purple-600 font-semibold">Customer savings</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Order Lift</span>
-          <p className="text-2xl font-extrabold text-slate-900">+34.8%</p>
+          <p className="text-2xl font-extrabold text-slate-900">+0.0%</p>
           <p className="text-xs text-blue-600 font-semibold">Higher cart total</p>
         </div>
       </div>

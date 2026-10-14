@@ -13,61 +13,20 @@ export interface Review {
 const STORAGE_KEY = "enviaar_product_reviews";
 import { API_BASE_URL } from "@/config/api";
 
-export const initialReviews: Review[] = [
-  {
-    id: "rev_101",
-    productId: "1",
-    authorName: "Ananya Sharma",
-    rating: 5,
-    title: "Exquisite Craftsmanship & Shine!",
-    comment: "The Aurelia Drop Earrings exceed expectations. The 18K gold plating has a rich, premium lustre and they feel so lightweight and comfortable all day long.",
-    createdAt: "2026-09-28",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_102",
-    productId: "1",
-    authorName: "Rohan V.",
-    rating: 5,
-    title: "Perfect gift for anniversary",
-    comment: "Bought these for my wife and she absolutely loved them. Premium luxury packaging as well!",
-    createdAt: "2026-10-02",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_103",
-    productId: "3",
-    authorName: "Priya Kapoor",
-    rating: 5,
-    title: "Stunning Elara Set",
-    comment: "Very elegant piece. The silver finish is flawless. Fast express delivery too.",
-    createdAt: "2026-10-04",
-    verifiedPurchase: true,
-  },
-  {
-    id: "rev_104",
-    productId: "6",
-    authorName: "Meera Nair",
-    rating: 4,
-    title: "Beautiful cocktail ring",
-    comment: "Looks gorgeous on hand. True to size and nicely finished.",
-    createdAt: "2026-10-05",
-    verifiedPurchase: true,
-  }
-];
+export const initialReviews: Review[] = [];
 
 export function getLocalReviews(): Review[] {
-  if (typeof window === "undefined") return initialReviews;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialReviews));
-      return initialReviews;
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error("Failed to read reviews from localStorage", err);
-    return initialReviews;
+    return [];
   }
 }
 
