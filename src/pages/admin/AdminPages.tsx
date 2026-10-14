@@ -47,6 +47,7 @@ import {
 } from "recharts";
 import {
   getSavedOrders,
+  clearAllStoredOrders,
   updateOrderStatusInStorage,
   updateOrderPaymentStatusInStorage,
   type CustomerOrder,
@@ -410,14 +411,43 @@ export function AdminOrders() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    const localOrders = getSavedOrders();
+    try {
+      localStorage.removeItem("enviaar_custom_orders");
+    } catch (_) {}
+
+    const localOrders = getSavedOrders().filter(
+      (o) =>
+        o.id !== "ord_1001" &&
+        o.id !== "ord_1002" &&
+        o.orderNumber !== "ENV-2026-1042" &&
+        o.orderNumber !== "ENV-2026-1041" &&
+        !String(o.customerEmail || "").toLowerCase().includes("aarav.sharma") &&
+        !String(o.customerEmail || "").toLowerCase().includes("priya.k@example.com")
+    );
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/orders`);
-      if (res.ok) {
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
         const apiOrders = await res.json();
-        if (Array.isArray(apiOrders) && apiOrders.length > 0) {
+        if (Array.isArray(apiOrders)) {
+          const cleanApi = apiOrders.filter(
+            (o: any) =>
+              o.id !== "ord_1001" &&
+              o.id !== "ord_1002" &&
+              o.orderNumber !== "ENV-2026-1042" &&
+              o.orderNumber !== "ENV-2026-1041" &&
+              !String(o.customerEmail || "").toLowerCase().includes("aarav.sharma") &&
+              !String(o.customerEmail || "").toLowerCase().includes("priya.k@example.com")
+          );
+
+          if (cleanApi.length === 0) {
+            setOrders(localOrders);
+            return;
+          }
+
           const localMap = new Map(localOrders.map((o) => [o.orderNumber, o]));
-          const merged: CustomerOrder[] = apiOrders.map((apiO: any) => {
+          const merged: CustomerOrder[] = cleanApi.map((apiO: any) => {
             const match = localMap.get(apiO.orderNumber);
             const method = apiO.paymentMethod || match?.paymentMethod || "UPI";
             const isCOD = method === "Cash on Delivery" || method.toLowerCase().includes("cod") || method.toLowerCase().includes("cash");
@@ -430,9 +460,9 @@ export function AdminOrders() {
 
             return {
               id: String(apiO.id || match?.id || Date.now()),
-              orderNumber: apiO.orderNumber || match?.orderNumber || `ENV-2026-1042`,
-              customerName: apiO.customerName || match?.customerName || "Valued Customer",
-              customerEmail: apiO.customerEmail || match?.customerEmail || "customer@enviaar.com",
+              orderNumber: apiO.orderNumber || match?.orderNumber || `ENV-${Date.now()}`,
+              customerName: apiO.customerName || match?.customerName || "Customer",
+              customerEmail: apiO.customerEmail || match?.customerEmail || "",
               customerPhone: apiO.customerPhone || match?.customerPhone || "",
               shippingAddress: apiO.shippingAddress || match?.shippingAddress || "Address on file",
               paymentMethod: method,
@@ -440,20 +470,17 @@ export function AdminOrders() {
               status: status,
               totalAmount: Number(apiO.totalAmount || match?.totalAmount || 0),
               items: match?.items || (Array.isArray(apiO.items) ? apiO.items : []),
-              createdAt: apiO.createdAt || match?.createdAt || "Just now",
+              createdAt: apiO.createdAt || match?.createdAt || new Date().toISOString(),
             };
           });
 
-          // Add any local orders not present in API response
           const apiOrderNums = new Set(merged.map((o) => o.orderNumber));
           const extraLocal = localOrders.filter((o) => !apiOrderNums.has(o.orderNumber));
           setOrders([...extraLocal, ...merged]);
-        } else {
-          setOrders(localOrders);
+          return;
         }
-      } else {
-        setOrders(localOrders);
       }
+      setOrders(localOrders);
     } catch (err) {
       console.warn("Backend API offline, using saved local orders");
       setOrders(localOrders);
@@ -559,6 +586,18 @@ export function AdminOrders() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              clearAllStoredOrders();
+              setOrders([]);
+              toast.success("Orders cache cleared! Fresh zero baseline active.");
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition shadow-xs"
+            title="Clear any cached test orders"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+            Reset Orders
+          </button>
           <button
             onClick={fetchOrders}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-xs"
@@ -944,6 +983,10 @@ export function AdminCustomers() {
 
           // Check if there are any orders with customer emails not in apiCustomers
           const existingEmails = new Set(merged.map((c: any) => (c.email || "").toLowerCase()));
+          // Exclude demo accounts
+          existingEmails.add("aarav.sharma@example.com");
+          existingEmails.add("priya.k@example.com");
+          existingEmails.add("vipul.m3011@gmail.com");
           customerOrderStats.forEach((stats, email) => {
             if (!existingEmails.has(email) && email) {
               const firstOrder = stats.orders[0];

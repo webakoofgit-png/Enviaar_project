@@ -23,21 +23,50 @@ export interface CustomerOrder {
   createdAt: string;
 }
 
-const STORAGE_KEY = "enviaar_custom_orders";
+const STORAGE_KEY = "enviaar_live_orders_v2";
 
 const initialSampleOrders: CustomerOrder[] = [];
 
 export function getSavedOrders(): CustomerOrder[] {
   try {
+    if (typeof window !== "undefined") {
+      // Purge legacy demo orders storage key
+      try {
+        localStorage.removeItem("enviaar_custom_orders");
+      } catch (_) {}
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Ensure no demo orders persist
+    const clean = parsed.filter(
+      (o: any) =>
+        o.id !== "ord_1001" &&
+        o.id !== "ord_1002" &&
+        o.orderNumber !== "ENV-2026-1042" &&
+        o.orderNumber !== "ENV-2026-1041" &&
+        !String(o.customerEmail || "").toLowerCase().includes("aarav.sharma") &&
+        !String(o.customerEmail || "").toLowerCase().includes("priya.k@example.com")
+    );
+    if (clean.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+    }
+    return clean;
   } catch (err) {
     console.error("Error reading saved orders from localStorage", err);
     return [];
+  }
+}
+
+export function clearAllStoredOrders(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("enviaar_custom_orders");
+  } catch (err) {
+    console.error("Error clearing orders from localStorage", err);
   }
 }
 
