@@ -27,6 +27,7 @@ import { useStore } from "@/context/StoreContext";
 import { money } from "@/data/store";
 import { toast } from "sonner";
 import { getSavedOrders, type CustomerOrder } from "@/lib/orderStorage";
+import { API_BASE_URL } from "@/config/api";
 
 type Address = {
   id: string;
@@ -102,7 +103,7 @@ export function CustomerProfilePage() {
   const refreshCustomerOrders = async () => {
     const localOrders = getSavedOrders();
     try {
-      const res = await fetch("http://localhost:5000/api/orders");
+      const res = await fetch(`${API_BASE_URL}/api/orders`);
       if (res.ok) {
         const apiOrders = await res.json();
         if (Array.isArray(apiOrders) && apiOrders.length > 0) {

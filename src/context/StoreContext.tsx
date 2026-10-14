@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { CartItem, CountryOption, MediaItem, Product } from "@/types/store";
 import { products as initialProducts, supportedCountries, formatPrice, getConvertedPrice } from "@/data/store";
 import { getSavedUserProfile, saveUserProfile } from "@/lib/userStorage";
+import { API_BASE_URL } from "@/config/api";
 
 export type CustomerUser = {
   id?: string | number | undefined;
@@ -186,7 +187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       let convertedApi: Product[] = [];
 
       try {
-        const res = await fetch("http://localhost:5000/api/products");
+        const res = await fetch(`${API_BASE_URL}/api/products`);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -391,7 +392,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("enviaar-customer-user", JSON.stringify(updated));
 
       // Sync to Express backend API
-      fetch("http://localhost:5000/api/auth/profile", {
+      fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
@@ -409,7 +410,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     password?: string;
   }) => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -433,7 +434,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const loginCustomer = async (data: { email: string; password?: string }) => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+import { API_BASE_URL } from "@/config/api";
+
 interface AdminAuthContextType {
   isAuthenticated: boolean;
   adminUser: { name: string; email: string; role: string } | null;
@@ -22,7 +24,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, pass: string): Promise<boolean> => {
     try {
       // Try Express backend API first
-      const res = await fetch("http://localhost:5000/api/admin/login", {
+      const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: pass }),

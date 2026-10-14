@@ -29,6 +29,7 @@ import {
 } from "@/lib/productStorage";
 import { normalizeCategory } from "@/context/StoreContext";
 import type { Product as StoreProduct } from "@/types/store";
+import { API_BASE_URL } from "@/config/api";
 
 interface Product {
   id: number;
@@ -219,7 +220,8 @@ export function AdminProductsPage() {
       }));
 
       try {
-        const url = new URL("http://localhost:5000/api/products");
+        const baseEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/products` : '/api/products';
+        const url = new URL(baseEndpoint, window.location.origin);
         if (activeTab !== "All") url.searchParams.append("status", activeTab);
         if (searchQuery) url.searchParams.append("q", searchQuery);
 
@@ -457,14 +459,14 @@ export function AdminProductsPage() {
 
     try {
       if (isEdit) {
-        await fetch(`http://localhost:5000/api/products/${productId}`, {
+        await fetch(`${API_BASE_URL}/api/products/${productId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(productPayload),
         });
         toast.success("Jewellery details updated successfully!");
       } else {
-        await fetch("http://localhost:5000/api/products", {
+        await fetch(`${API_BASE_URL}/api/products`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(productPayload),
@@ -489,7 +491,7 @@ export function AdminProductsPage() {
     markProductsAsDeleted(itemsToDelete);
     removeCustomProducts(selectedIds);
     try {
-      await fetch("http://localhost:5000/api/products", {
+      await fetch(`${API_BASE_URL}/api/products`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: selectedIds }),

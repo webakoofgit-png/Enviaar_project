@@ -11,6 +11,7 @@ export interface Review {
 }
 
 const STORAGE_KEY = "enviaar_product_reviews";
+import { API_BASE_URL } from "@/config/api";
 
 export const initialReviews: Review[] = [
   {
@@ -86,7 +87,7 @@ export function getReviewsForProduct(productId: string, allReviews: Review[]): R
 export async function fetchAllReviews(): Promise<Review[]> {
   const local = getLocalReviews();
   try {
-    const res = await fetch("http://localhost:5000/api/reviews");
+    const res = await fetch(`${API_BASE_URL}/api/reviews`);
     if (res.ok) {
       const serverReviews = await res.json();
       if (Array.isArray(serverReviews) && serverReviews.length > 0) {
@@ -134,7 +135,7 @@ export async function addProductReview(data: {
   saveLocalReviews(updated);
 
   try {
-    await fetch("http://localhost:5000/api/reviews", {
+    await fetch(`${API_BASE_URL}/api/reviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newReview),
@@ -156,7 +157,7 @@ export async function deleteProductReview(reviewId: string): Promise<boolean> {
   saveLocalReviews(filtered);
 
   try {
-    await fetch(`http://localhost:5000/api/reviews/${reviewId}`, {
+    await fetch(`${API_BASE_URL}/api/reviews/${reviewId}`, {
       method: "DELETE",
     });
   } catch (e) {

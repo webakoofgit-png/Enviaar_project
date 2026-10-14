@@ -8,6 +8,7 @@
     "server": "node --watch server/index.js",
     "dev": "concurrently --names \"CLIENT,SERVER\" --prefix-colors \"cyan,yellow\" \"npm run client\" \"npm run server\"",
     "build": "tsc && vite build",
+    "start": "node server/index.js",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."

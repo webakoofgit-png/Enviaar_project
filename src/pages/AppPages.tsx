@@ -22,6 +22,7 @@ import { useStore } from "@/context/StoreContext";
 import { collectionInfo, images, money } from "@/data/store";
 import type { MediaItem, Product } from "@/types/store";
 import { saveOrder, type CustomerOrder } from "@/lib/orderStorage";
+import { API_BASE_URL } from "@/config/api";
 import {
   fetchAllReviews,
   addProductReview,
@@ -528,7 +529,7 @@ export function CheckoutPage() {
 
     // Save to Express Backend API
     try {
-      await fetch("http://localhost:5000/api/orders", {
+      await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderObj),

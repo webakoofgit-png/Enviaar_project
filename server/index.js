@@ -946,6 +946,18 @@ app.delete('/api/reviews/:id', (req, res) => {
   }
 });
 
+// Serve frontend static files if dist folder exists (Single domain deployment on Hostinger)
+const distPath = path.join(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`🚀 ENVIAAR Express Backend running on http://localhost:${PORT}`);
   testConnection();

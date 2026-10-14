@@ -57,6 +57,7 @@ import {
   type HeroSlide,
 } from "@/lib/cmsStorage";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config/api";
 
 export function AdminHome() {
   return (
@@ -350,7 +351,7 @@ export function AdminOrders() {
     setLoading(true);
     const localOrders = getSavedOrders();
     try {
-      const res = await fetch("http://localhost:5000/api/orders");
+      const res = await fetch(`${API_BASE_URL}/api/orders`);
       if (res.ok) {
         const apiOrders = await res.json();
         if (Array.isArray(apiOrders) && apiOrders.length > 0) {
@@ -433,7 +434,7 @@ export function AdminOrders() {
 
     // 3. API update
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -458,7 +459,7 @@ export function AdminOrders() {
     updateOrderPaymentStatusInStorage(orderId, nextPStatus);
 
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentStatus: nextPStatus }),
@@ -871,7 +872,7 @@ export function AdminCustomers() {
     });
 
     try {
-      const res = await fetch("http://localhost:5000/api/customers");
+      const res = await fetch(`${API_BASE_URL}/api/customers`);
       if (res.ok) {
         const apiCustomers = await res.json();
         if (Array.isArray(apiCustomers) && apiCustomers.length > 0) {
