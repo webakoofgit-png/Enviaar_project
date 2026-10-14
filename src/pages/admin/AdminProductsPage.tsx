@@ -19,6 +19,7 @@ import {
   Play,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getSavedOrders } from "@/lib/orderStorage";
 import {
   getCustomProducts,
   removeCustomProducts,
@@ -70,6 +71,38 @@ export function AdminProductsPage() {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [urlInput, setUrlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+  });
+
+  useEffect(() => {
+    const orders = getSavedOrders();
+    const localRev = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    setStats({
+      totalProducts: products.length,
+      totalRevenue: localRev,
+      totalOrders: orders.length,
+      totalCustomers: 0,
+    });
+
+    fetch(`${API_BASE_URL}/api/dashboard/stats`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setStats({
+            totalProducts: data.totalProducts ?? products.length,
+            totalRevenue: Math.max(data.totalRevenue || 0, localRev),
+            totalOrders: Math.max(data.totalOrders || 0, orders.length),
+            totalCustomers: data.totalCustomers || 0,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [products.length]);
 
   // Form state for adding/editing jewellery product
   const [formData, setFormData] = useState({
@@ -244,132 +277,8 @@ export function AdminProductsPage() {
         // API offline fallback below
       }
 
-      console.warn("Backend API not reachable, loading real ENVIAAR catalogue dataset");
-      const fallback: Product[] = [
-        {
-          id: 1,
-          name: "Aurelia Drop Earrings",
-          category: "Earrings",
-          sku: "#ENV-EAR001",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 3990.0,
-          sellPrice: 3490.0,
-          stock: 48,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80",
-        },
-        {
-          id: 2,
-          name: "Mira Pearl Studs",
-          category: "Earrings",
-          sku: "#ENV-EAR002",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 2200.0,
-          sellPrice: 1890.0,
-          stock: 65,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80",
-        },
-        {
-          id: 3,
-          name: "Elara Necklace Set",
-          category: "Necklaces",
-          sku: "#ENV-NCK001",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 8490.0,
-          sellPrice: 7490.0,
-          stock: 18,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=300&q=80",
-        },
-        {
-          id: 4,
-          name: "Noor Pendant Chain",
-          category: "Necklaces",
-          sku: "#ENV-NCK002",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 3490.0,
-          sellPrice: 2990.0,
-          stock: 32,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80",
-        },
-        {
-          id: 5,
-          name: "Solène Tennis Bracelet",
-          category: "Bracelets",
-          sku: "#ENV-BRC001",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 4990.0,
-          sellPrice: 4290.0,
-          stock: 24,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80",
-        },
-        {
-          id: 6,
-          name: "Amaara Cocktail Ring",
-          category: "Rings",
-          sku: "#ENV-RNG001",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 3290.0,
-          sellPrice: 2790.0,
-          stock: 15,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80",
-        },
-        {
-          id: 7,
-          name: "Tara Sculpted Kada",
-          category: "Kada & Bangles",
-          sku: "#ENV-KAD001",
-          createdAt: "Jan 01, 2024",
-          regularPrice: 4490.0,
-          sellPrice: 3890.0,
-          stock: 0,
-          status: "out Stock",
-          image: "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80",
-        },
-        {
-          id: 8,
-          name: "Avni Everyday Mangalsutra",
-          category: "Mangalsutra",
-          sku: "#ENV-MNG001",
-          createdAt: "Jan 02, 2024",
-          regularPrice: 5200.0,
-          sellPrice: 4590.0,
-          stock: 20,
-          status: "Published",
-          image: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=300&q=80",
-        },
-        {
-          id: 9,
-          name: "Veer Minimal Cuff",
-          category: "Men’s Jewellery",
-          sku: "#ENV-MEN001",
-          createdAt: "Jan 02, 2024",
-          regularPrice: 2990.0,
-          sellPrice: 2490.0,
-          stock: 30,
-          status: "Draft",
-          image: "https://images.unsplash.com/photo-1611591475874-b8e45fd430e3?w=300&q=80",
-        },
-        {
-          id: 10,
-          name: "Arjun Signet Ring",
-          category: "Men’s Jewellery",
-          sku: "#ENV-MEN002",
-          createdAt: "Jan 02, 2024",
-          regularPrice: 3800.0,
-          sellPrice: 3290.0,
-          stock: 0,
-          status: "Inactive",
-          image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80",
-        },
-      ];
-      const customIds = new Set(customItems.map((c: Product) => String(c.id)));
-      const filteredFallback = fallback.filter((f) => !customIds.has(String(f.id)));
-      setProducts(filterDeletedProducts([...customItems, ...filteredFallback]));
+      console.warn("Backend API not reachable, loading custom products");
+      setProducts(filterDeletedProducts(customItems));
     } finally {
       setLoading(false);
     }
@@ -578,9 +487,9 @@ export function AdminProductsPage() {
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-700">
               <TrendingUp className="h-3 w-3" />
-              +4.2%
+              Live
             </span>
-            <span className="text-[11px] text-slate-400">Last 7 days</span>
+            <span className="text-[11px] text-slate-400">Store Catalog</span>
           </div>
         </div>
 
@@ -589,13 +498,15 @@ export function AdminProductsPage() {
             <span>Total Revenue</span>
             <MoreVertical className="h-4 w-4 text-slate-300 cursor-pointer" />
           </div>
-          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">₹84,320</div>
+          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">
+            ₹{stats.totalRevenue.toLocaleString("en-IN")}
+          </div>
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-700">
               <TrendingUp className="h-3 w-3" />
-              +12.5%
+              Live
             </span>
-            <span className="text-[11px] text-slate-400">Last 7 days</span>
+            <span className="text-[11px] text-slate-400">Recorded Sales</span>
           </div>
         </div>
 
@@ -604,13 +515,12 @@ export function AdminProductsPage() {
             <span>Total Orders</span>
             <MoreVertical className="h-4 w-4 text-slate-300 cursor-pointer" />
           </div>
-          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">142</div>
+          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">{stats.totalOrders}</div>
           <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-700">
-              <TrendingDown className="h-3 w-3" />
-              -1.4%
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+              Live
             </span>
-            <span className="text-[11px] text-slate-400">Last 7 days</span>
+            <span className="text-[11px] text-slate-400">Customer Orders</span>
           </div>
         </div>
 
@@ -619,13 +529,12 @@ export function AdminProductsPage() {
             <span>Customers</span>
             <MoreVertical className="h-4 w-4 text-slate-300 cursor-pointer" />
           </div>
-          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">3,240</div>
+          <div className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">{stats.totalCustomers}</div>
           <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-700">
-              <TrendingUp className="h-3 w-3" />
-              +2.1%
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+              Live
             </span>
-            <span className="text-[11px] text-slate-400">Last 7 days</span>
+            <span className="text-[11px] text-slate-400">Registered Accounts</span>
           </div>
         </div>
       </div>
