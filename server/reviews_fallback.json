@@ -1,5 +1,16 @@
 [
   {
+    "id": "rev_1791461126535_215",
+    "productId": "1791369672452",
+    "authorName": "vipul mandal",
+    "authorEmail": "vipul.m3011@gmail.com",
+    "rating": 5,
+    "title": "superb product",
+    "comment": "the earring was really good !",
+    "createdAt": "2026-10-08",
+    "verifiedPurchase": true
+  },
+  {
     "id": "rev_101",
     "productId": "1",
     "authorName": "Ananya Sharma",
