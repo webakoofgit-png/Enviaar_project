@@ -3,6 +3,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "client": "vite",
     "server": "node --watch server/index.js",
