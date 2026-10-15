@@ -64,23 +64,23 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
-export function normalizeCategory(cat: string): string {
-  if (!cat) return "necklaces";
-  const lower = cat.toLowerCase();
-  if (lower.includes("earring")) return "earrings";
-  if (lower.includes("necklace")) return "necklaces";
-  if (lower.includes("bracelet")) return "bracelets";
-  if (lower.includes("ring")) return "rings";
-  if (lower.includes("kada") || lower.includes("bangle")) return "kada";
-  if (lower.includes("mangalsutra")) return "mangalsutra";
-  if (lower.includes("men")) return "mens";
-  if (lower.includes("brooch")) return "brooches";
-  if (lower.includes("baby")) return "baby";
-  return lower;
+export function normalizeCategory(cat?: string | null, name?: string | null): string {
+  const target = `${cat || ""} ${name || ""}`.toLowerCase();
+  if (target.includes("earring")) return "earrings";
+  if (target.includes("necklace")) return "necklaces";
+  if (target.includes("bracelet")) return "bracelets";
+  if (target.includes("ring")) return "rings";
+  if (target.includes("kada") || target.includes("bangle")) return "kada";
+  if (target.includes("mangalsutra")) return "mangalsutra";
+  if (target.includes("men")) return "mens";
+  if (target.includes("brooch")) return "brooches";
+  if (target.includes("baby")) return "baby";
+  if (cat && cat.trim()) return cat.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+  return "earrings";
 }
 
 export function apiProductToStoreProduct(item: any): Product {
-  const categorySlug = normalizeCategory(item.category);
+  const categorySlug = normalizeCategory(item.category, item.name);
   const rawName = item.name || `Jewellery Piece ${item.id}`;
   const slug = rawName
     .toLowerCase()

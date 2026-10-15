@@ -344,6 +344,32 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
+async function resolveCategoryId(categoryName, productName) {
+  const cat = (categoryName || '').trim() || (
+    productName && productName.toLowerCase().includes('earring') ? 'Earrings' :
+    productName && productName.toLowerCase().includes('necklace') ? 'Necklaces' :
+    productName && productName.toLowerCase().includes('bracelet') ? 'Bracelets' :
+    productName && productName.toLowerCase().includes('ring') ? 'Rings' :
+    productName && productName.toLowerCase().includes('kada') ? 'Kada' :
+    productName && productName.toLowerCase().includes('mangalsutra') ? 'Mangalsutra' :
+    productName && productName.toLowerCase().includes('men') ? 'Men’s' :
+    'Earrings'
+  );
+
+  try {
+    const slug = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const [rows] = await pool.query('SELECT id FROM categories WHERE slug = ? OR LOWER(name) = ? LIMIT 1', [slug, cat.toLowerCase()]);
+    if (rows.length > 0) {
+      return rows[0].id;
+    }
+    const [inserted] = await pool.query('INSERT INTO categories (name, slug) VALUES (?, ?)', [cat, slug]);
+    return inserted.insertId;
+  } catch (err) {
+    console.warn('Failed to resolve categoryId:', err.message);
+    return null;
+  }
+}
+
 // Get Products endpoint
 app.get('/api/products', async (req, res) => {
   const { status, q } = req.query;
@@ -352,7 +378,18 @@ app.get('/api/products', async (req, res) => {
     let sql = `
       SELECT p.id, p.name, p.sku, p.regular_price AS regularPrice, p.sell_price AS sellPrice,
              p.stock_quantity AS stock, p.status, p.image_url AS image, p.created_at AS createdAt,
-             c.name AS category
+             COALESCE(c.name,
+               CASE 
+                 WHEN LOWER(p.name) LIKE '%earring%' THEN 'Earrings'
+                 WHEN LOWER(p.name) LIKE '%necklace%' THEN 'Necklaces'
+                 WHEN LOWER(p.name) LIKE '%bracelet%' THEN 'Bracelets'
+                 WHEN LOWER(p.name) LIKE '%ring%' THEN 'Rings'
+                 WHEN LOWER(p.name) LIKE '%bangle%' OR LOWER(p.name) LIKE '%kada%' THEN 'Kada'
+                 WHEN LOWER(p.name) LIKE '%mangalsutra%' THEN 'Mangalsutra'
+                 WHEN LOWER(p.name) LIKE '%men%' THEN 'Men’s'
+                 ELSE 'Earrings'
+               END
+             ) AS category
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE 1=1
@@ -421,12 +458,15 @@ app.post('/api/products', async (req, res) => {
   };
 
   try {
+    const categoryId = await resolveCategoryId(productObj.category, productObj.name);
+
     const [result] = await pool.query(
-      `INSERT INTO products (name, sku, description, regular_price, sell_price, stock_quantity, status, image_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (name, sku, category_id, description, regular_price, sell_price, stock_quantity, status, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productObj.name,
         productObj.sku,
+        categoryId,
         productObj.description,
         productObj.regularPrice,
         productObj.sellPrice,
