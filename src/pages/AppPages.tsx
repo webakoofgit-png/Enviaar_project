@@ -445,7 +445,7 @@ export function CartPage() {
           <SummaryRow label="Discount" value={-discount} />
           <SummaryRow
             label="Shipping"
-            text={subtotal >= 5000 ? "Complimentary" : "Calculated at checkout"}
+            text={subtotal >= 1000 ? "Complimentary" : "Calculated at checkout"}
           />
           <div className="mt-5 flex justify-between border-t pt-5 text-base sm:text-lg">
             <strong>Total</strong>
@@ -855,7 +855,7 @@ export function AboutPage() {
       <section className="bg-secondary/35 py-12 sm:py-16 px-4 text-center border-t border-border/40">
         <div className="mx-auto max-w-4xl space-y-4">
           <p className="text-xs uppercase tracking-[.2em] text-muted-foreground">THE ENVIAAR EXPERIENCE</p>
-          <h3 className="font-display text-3xl sm:text-4xl md:text-5xl">Affordable Luxury at Your Fingertip</h3>
+          <h3 className="font-display text-3xl sm:text-4xl md:text-5xl">Identity in every sparkle</h3>
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Discover demi-fine jewellery designed to elevate every moment with lasting brilliance, high-durability moissanite, and hand-selected freshwater pearls.
           </p>

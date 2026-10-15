@@ -124,7 +124,7 @@ export function CartDrawer() {
     (sum, item) => sum + (Number(item?.product?.price) || 0) * (item?.quantity || 1),
     0,
   );
-  const remaining = Math.max(0, 5000 - subtotal);
+  const remaining = Math.max(0, 1000 - subtotal);
   return (
     <AnimatePresence>
       {cartOpen && (
@@ -155,7 +155,7 @@ export function CartDrawer() {
               <div className="mt-3 h-1 bg-muted">
                 <div
                   className="h-full bg-primary"
-                  style={{ width: `${Math.min(100, subtotal / 50)}%` }}
+                  style={{ width: `${Math.min(100, (subtotal / 1000) * 100)}%` }}
                 />
               </div>
             </div>
@@ -450,7 +450,7 @@ export function AccountDrawer() {
                       setErrorMsg("");
                     }}
                   >
-                    Create account
+                    Create an account
                   </button>
                 </p>
               </>
@@ -604,11 +604,11 @@ export function PromoPopup() {
               <img src="/image-copy.png" alt="ENVIAAR" className="h-8 w-auto mx-auto object-contain" />
               <h2 className="mt-12 text-4xl">A Little Something For You</h2>
               <p className="mt-5 text-muted-foreground">
-                Join the ENVIAAR circle and enjoy 10% off your first order.
+                Join the ENVIAAR circle and enjoy Rs 100 off on your first order.
               </p>
               <Input className="mt-8" type="email" placeholder="Email address" />
               <Button className="mt-3 w-full" variant="luxury" onClick={close}>
-                Get My 10% Off
+                Get My Rs 100 Off
               </Button>
               <button className="mt-6 text-xs underline" onClick={close}>
                 No thanks, I’ll continue browsing.
