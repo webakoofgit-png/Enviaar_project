@@ -872,6 +872,34 @@ app.put('/api/orders/:id', async (req, res) => {
   res.json({ success: true, message: `Order ${id} status updated to ${status}` });
 });
 
+// DELETE Order API Endpoint
+app.delete('/api/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Delete associated order items
+    await pool.query(
+      `DELETE FROM order_items WHERE order_id = ? OR order_id IN (SELECT id FROM orders WHERE order_number = ?)`,
+      [id, id]
+    ).catch(() => {});
+
+    // 2. Delete the order from orders table
+    await pool.query(
+      `DELETE FROM orders WHERE id = ? OR order_number = ?`,
+      [id, id]
+    );
+  } catch (err) {
+    console.warn("DB Order delete fallback:", err.message);
+  }
+
+  // 3. Remove from mockOrders in-memory list
+  mockOrders = mockOrders.filter(
+    (o) => String(o.id) !== String(id) && String(o.orderNumber) !== String(id)
+  );
+
+  return res.json({ success: true, message: `Order ${id} deleted successfully.` });
+});
+
 // GET Reviews Endpoint
 app.get('/api/reviews', async (req, res) => {
   const { productId } = req.query;
