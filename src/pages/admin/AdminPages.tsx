@@ -72,7 +72,7 @@ export function AdminHome() {
 
   useEffect(() => {
     const savedOrders = getSavedOrders();
-    const localRev = savedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const localRev = savedOrders.reduce((sum, o) => sum + (parseFloat(String(o.totalAmount || 0)) || 0), 0);
     setStats({
       totalProducts: products.length,
       totalOrders: savedOrders.length,
@@ -87,7 +87,7 @@ export function AdminHome() {
           setStats({
             totalProducts: data.totalProducts ?? products.length,
             totalOrders: Math.max(data.totalOrders || 0, savedOrders.length),
-            totalRevenue: Math.max(data.totalRevenue || 0, localRev),
+            totalRevenue: Math.max(parseFloat(String(data.totalRevenue || 0)) || 0, localRev),
             totalCustomers: data.totalCustomers || 0,
           });
         }
@@ -145,7 +145,7 @@ export function AdminHome() {
           <div className="flex items-center justify-between text-emerald-600">
             <BarChart3 className="h-6 w-6" />
             <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-              ₹{stats.totalRevenue.toLocaleString("en-IN")} Revenue
+              ₹{Math.round(parseFloat(String(stats.totalRevenue || 0)) || 0).toLocaleString("en-IN")} Revenue
             </span>
           </div>
           <div>
@@ -172,13 +172,17 @@ export function AdminAnalytics() {
       .then((res) => (res.ok ? res.json() : []))
       .then((data: any) => {
         if (Array.isArray(data) && data.length > 0) {
-          setOrders(data);
+          const parsed = data.map((o: any) => ({
+            ...o,
+            totalAmount: parseFloat(String(o.totalAmount || 0)) || 0,
+          }));
+          setOrders(parsed);
         }
       })
       .catch(() => {});
   }, []);
 
-  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0), [orders]);
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (parseFloat(String(o.totalAmount || 0)) || 0), 0), [orders]);
   const aov = useMemo(() => (orders.length ? Math.round(totalRevenue / orders.length) : 0), [orders, totalRevenue]);
 
   const currentMonthName = new Date().toLocaleString("en-US", { month: "short" });
@@ -191,7 +195,7 @@ export function AdminAnalytics() {
       const d = o.createdAt ? new Date(o.createdAt) : new Date();
       const m = isNaN(d.getTime()) ? currentMonthName : d.toLocaleString("en-US", { month: "short" });
       const curr = monthMap.get(m) || { month: m, revenue: 0, orders: 0, earrings: 0, necklaces: 0, rings: 0 };
-      curr.revenue += o.totalAmount || 0;
+      curr.revenue += parseFloat(String(o.totalAmount || 0)) || 0;
       curr.orders += 1;
       monthMap.set(m, curr);
     });
@@ -231,7 +235,9 @@ export function AdminAnalytics() {
             <span>Total Sales Revenue</span>
             <DollarSign className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString("en-IN")}</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(totalRevenue).toLocaleString("en-IN")}`}>
+            ₹{Math.round(totalRevenue).toLocaleString("en-IN")}
+          </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
             <span>Recorded customer orders</span>
           </div>
@@ -284,7 +290,7 @@ export function AdminAnalytics() {
               <span>Total Revenue (₹)</span>
             </div>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
-              ₹{totalRevenue.toLocaleString("en-IN")} Total
+              ₹{Math.round(totalRevenue).toLocaleString("en-IN")} Total
             </span>
           </div>
         </div>
@@ -564,7 +570,7 @@ export function AdminOrders() {
   }, [orders, statusFilter, searchQuery]);
 
   // Metrics calculation
-  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + o.totalAmount, 0), [orders]);
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (parseFloat(String(o.totalAmount || 0)) || 0), 0), [orders]);
   const processingCount = useMemo(
     () => orders.filter((o) => o.status === "Processing" || o.status === "Pending").length,
     [orders],
@@ -624,7 +630,9 @@ export function AdminOrders() {
             <span>Orders Revenue</span>
             <DollarSign className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString("en-IN")}</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(totalRevenue).toLocaleString("en-IN")}`}>
+            ₹{Math.round(totalRevenue).toLocaleString("en-IN")}
+          </div>
           <p className="text-[11px] text-emerald-600 font-medium">Cumulative gross value</p>
         </div>
 
@@ -753,7 +761,7 @@ export function AdminOrders() {
                     {/* Total Price */}
                     <td className="py-4 px-4 align-top">
                       <div className="font-extrabold text-slate-900 text-sm">
-                        ₹{order.totalAmount.toLocaleString("en-IN")}
+                        ₹{(parseFloat(String(order.totalAmount || 0)) || 0).toLocaleString("en-IN")}
                       </div>
                     </td>
 
@@ -932,7 +940,7 @@ export function AdminOrders() {
             {/* Total Footer */}
             <div className="mt-6 pt-4 border-t flex justify-between items-center text-slate-900">
               <span className="font-bold text-sm">Total Paid</span>
-              <span className="font-extrabold text-xl">₹{selectedOrder.totalAmount.toLocaleString("en-IN")}</span>
+              <span className="font-extrabold text-xl">₹{(parseFloat(String(selectedOrder.totalAmount || 0)) || 0).toLocaleString("en-IN")}</span>
             </div>
           </div>
         </div>
@@ -958,7 +966,7 @@ export function AdminCustomers() {
       const emailKey = (o.customerEmail || "").toLowerCase();
       const existing = customerOrderStats.get(emailKey) || { count: 0, spent: 0, orders: [] };
       existing.count += 1;
-      existing.spent += o.totalAmount;
+      existing.spent += parseFloat(String(o.totalAmount || 0)) || 0;
       existing.orders.push(o);
       customerOrderStats.set(emailKey, existing);
     });
@@ -1354,7 +1362,7 @@ export function AdminCustomers() {
                         <div className="text-slate-500 text-[11px]">{ord.createdAt} • {ord.items?.length || 1} Item(s)</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-extrabold text-slate-900">₹{ord.totalAmount.toLocaleString("en-IN")}</div>
+                        <div className="font-extrabold text-slate-900">₹{(parseFloat(String(ord.totalAmount || 0)) || 0).toLocaleString("en-IN")}</div>
                         <span className="inline-block text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
                           {ord.status}
                         </span>
@@ -1876,7 +1884,11 @@ export function AdminFinances() {
       .then((res) => (res.ok ? res.json() : []))
       .then((data: any) => {
         if (Array.isArray(data) && data.length > 0) {
-          setOrders(data);
+          const parsed = data.map((o: any) => ({
+            ...o,
+            totalAmount: parseFloat(String(o.totalAmount || 0)) || 0,
+          }));
+          setOrders(parsed);
         }
       })
       .catch(() => {});
@@ -1886,16 +1898,18 @@ export function AdminFinances() {
     return orders.map((o) => {
       const isCOD = (o.paymentMethod || "").toLowerCase().includes("cash") || (o.paymentMethod || "").toLowerCase().includes("cod");
       const feeRate = isCOD ? 0 : 0.02;
-      const fee = Math.round((o.totalAmount || 0) * feeRate);
+      const gross = parseFloat(String(o.totalAmount || 0)) || 0;
+      const fee = Math.round(gross * feeRate);
+      const net = gross - fee;
       return {
         id: `TXN-${o.orderNumber?.replace(/[^0-9]/g, "") || o.id?.slice(-6) || "001"}`,
         orderId: o.orderNumber || `ENV-${o.id}`,
         customer: o.customerName || "Customer",
         gateway: o.paymentMethod || "UPI",
-        gross: o.totalAmount || 0,
+        gross: gross,
         fee: fee,
-        net: (o.totalAmount || 0) - fee,
-        status: o.paymentStatus === "Paid" ? "Settled" : "Pending Payout",
+        net: net,
+        status: (o.paymentStatus || "").toLowerCase() === "paid" ? "Settled" : "Pending Payout",
         date: o.createdAt ? o.createdAt.split(" ")[0] : new Date().toISOString().split("T")[0],
       };
     });
@@ -1903,12 +1917,12 @@ export function AdminFinances() {
 
   const filtered = transactions.filter(t => filterGateway === "All" || t.gateway.includes(filterGateway));
 
-  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0), [orders]);
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + (parseFloat(String(o.totalAmount || 0)) || 0), 0), [orders]);
   const netMargin = useMemo(() => Math.round(totalRevenue * 0.7), [totalRevenue]);
   const pendingPayouts = useMemo(() => {
     return orders
-      .filter((o) => o.paymentStatus !== "Paid")
-      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+      .filter((o) => (o.paymentStatus || "").toLowerCase() !== "paid")
+      .reduce((sum, o) => sum + (parseFloat(String(o.totalAmount || 0)) || 0), 0);
   }, [orders]);
   const gstCollected = useMemo(() => Math.round(totalRevenue * 0.18), [totalRevenue]);
 
@@ -1931,41 +1945,49 @@ export function AdminFinances() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2 overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Sales Revenue</span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><DollarSign className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹{totalRevenue.toLocaleString("en-IN")}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(totalRevenue).toLocaleString("en-IN")}`}>
+            ₹{Math.round(totalRevenue).toLocaleString("en-IN")}
+          </p>
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
             Recorded store orders
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2 overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Profit Margin</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><BarChart3 className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹{netMargin.toLocaleString("en-IN")}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(netMargin).toLocaleString("en-IN")}`}>
+            ₹{Math.round(netMargin).toLocaleString("en-IN")}
+          </p>
           <p className="text-xs text-slate-500 font-medium">70.0% estimated net margin</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2 overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payouts</span>
             <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Clock className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹{pendingPayouts.toLocaleString("en-IN")}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(pendingPayouts).toLocaleString("en-IN")}`}>
+            ₹{Math.round(pendingPayouts).toLocaleString("en-IN")}
+          </p>
           <p className="text-xs text-amber-700 font-medium">Unsettled orders</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2 overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxes / GST Collected</span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><CreditCard className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900">₹{gstCollected.toLocaleString("en-IN")}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-slate-900 truncate" title={`₹${Math.round(gstCollected).toLocaleString("en-IN")}`}>
+            ₹{Math.round(gstCollected).toLocaleString("en-IN")}
+          </p>
           <p className="text-xs text-slate-500 font-medium">18% GST slab accounting</p>
         </div>
       </div>
@@ -1974,7 +1996,7 @@ export function AdminFinances() {
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-xs font-bold tracking-widest text-amber-400 uppercase">Automated Payout Schedule</span>
-          <h3 className="text-lg font-bold mt-1">Next Settlement Batch: ₹{(totalRevenue - pendingPayouts).toLocaleString("en-IN")}</h3>
+          <h3 className="text-lg font-bold mt-1">Next Settlement Batch: ₹{Math.max(0, Math.round(totalRevenue - pendingPayouts)).toLocaleString("en-IN")}</h3>
           <p className="text-xs text-slate-300 mt-0.5">Razorpay & Stripe direct deposit into ENVIAAR Operating Account</p>
         </div>
         <button
@@ -2033,9 +2055,9 @@ export function AdminFinances() {
                     <td className="py-3 px-4 text-blue-600 font-semibold">{t.orderId}</td>
                     <td className="py-3 px-4 font-semibold text-slate-900">{t.customer}</td>
                     <td className="py-3 px-4">{t.gateway}</td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900">₹{t.gross.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right text-rose-600">₹{t.fee}</td>
-                    <td className="py-3 px-4 text-right font-bold text-emerald-700">₹{t.net.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">₹{Math.round(t.gross).toLocaleString("en-IN")}</td>
+                    <td className="py-3 px-4 text-right text-rose-600">₹{Math.round(t.fee).toLocaleString("en-IN")}</td>
+                    <td className="py-3 px-4 text-right font-bold text-emerald-700">₹{Math.round(t.net).toLocaleString("en-IN")}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${

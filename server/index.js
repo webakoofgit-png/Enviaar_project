@@ -762,7 +762,11 @@ app.get('/api/orders', async (req, res) => {
     sql += ` ORDER BY o.id DESC`;
     const [rows] = await pool.query(sql, params);
 
-    return res.json(rows);
+    const mappedRows = rows.map((r) => ({
+      ...r,
+      totalAmount: parseFloat(r.totalAmount) || 0,
+    }));
+    return res.json(mappedRows);
   } catch (err) {
     console.warn("MySQL DB order fetch fallback mode");
   }
