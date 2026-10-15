@@ -190,21 +190,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const res = await fetch(`${API_BASE_URL}/api/products`);
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
+          if (Array.isArray(data)) {
             const publishedApi = data.filter(
-              (p) => !p.status || p.status.toLowerCase() === "published" || p.status.toLowerCase() === "instock",
+              (p) => !p.status || p.status.toLowerCase() === "published" || p.status.toLowerCase() === "instock" || p.status.toLowerCase() === "active",
             );
             convertedApi = publishedApi.map(apiProductToStoreProduct);
+            setProductList(convertedApi);
+            return;
           }
         }
       } catch (err) {
-        console.warn("Backend API not reachable for storefront, using local custom products and fallback catalog");
+        console.warn("Backend API not reachable for storefront, using local custom products");
       }
 
-      // Combine API products and custom products created via Admin
-      const allMerged = deduplicateProducts([...convertedApi, ...customProducts]);
-      const cleanList = filterDeletedProducts(allMerged);
-      setProductList(cleanList);
+      setProductList(customProducts);
     } finally {
       setLoadingProducts(false);
     }

@@ -261,17 +261,18 @@ export function AdminProductsPage() {
         const res = await fetch(url.toString());
         if (res.ok) {
           const data = await res.json();
-          const seen = new Set<string>();
-          const unique: Product[] = [];
-          for (const item of [...(Array.isArray(data) ? data : []), ...customItems]) {
-            const key = (item.name || "").toLowerCase().trim();
-            if (key && !seen.has(key)) {
-              seen.add(key);
-              unique.push(item);
+          if (Array.isArray(data)) {
+            let filtered = data;
+            if (activeTab === "Active") {
+              filtered = data.filter((p) => !p.status || p.status.toLowerCase() === "published" || p.status.toLowerCase() === "active");
+            } else if (activeTab === "Drafts") {
+              filtered = data.filter((p) => p.status && (p.status.toLowerCase() === "draft" || p.status.toLowerCase() === "drafts"));
+            } else if (activeTab === "Archived") {
+              filtered = data.filter((p) => p.status && p.status.toLowerCase() === "archived");
             }
+            setProducts(filtered);
+            return;
           }
-          setProducts(filterDeletedProducts(unique));
-          return;
         }
       } catch (e) {
         // API offline fallback below

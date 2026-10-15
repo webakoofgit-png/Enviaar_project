@@ -27,6 +27,44 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+const UPLOADS_DIR = path.join(__dirname, '../public/uploads');
+const DIST_UPLOADS_DIR = path.join(__dirname, '../dist/uploads');
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+} catch (e) {}
+try {
+  if (!fs.existsSync(DIST_UPLOADS_DIR)) fs.mkdirSync(DIST_UPLOADS_DIR, { recursive: true });
+} catch (e) {}
+
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use('/uploads', express.static(DIST_UPLOADS_DIR));
+
+function saveBase64Image(base64Str) {
+  if (!base64Str || typeof base64Str !== 'string' || !base64Str.startsWith('data:image/')) {
+    return base64Str || '';
+  }
+  try {
+    const matches = base64Str.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+    if (!matches || matches.length < 3) return base64Str;
+    const rawExt = matches[1].toLowerCase();
+    const ext = rawExt.includes('png') ? 'png' : rawExt.includes('webp') ? 'webp' : 'jpg';
+    const buffer = Buffer.from(matches[2], 'base64');
+    const filename = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    
+    try {
+      fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+    } catch (e) {}
+    try {
+      fs.writeFileSync(path.join(DIST_UPLOADS_DIR, filename), buffer);
+    } catch (e) {}
+    
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.warn('Failed to save base64 image to disk:', err.message);
+    return base64Str;
+  }
+}
+
 // Health and DB diagnostic endpoint
 app.get('/api/health', async (req, res) => {
   try {
@@ -466,10 +504,15 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description, details, materialsFinish } = req.body;
 
-  // Ensure image_url safely fits within standard MySQL VARCHAR(255) if it's a huge Base64 data string
-  const safeImageUrl = (image && image.length < 500)
-    ? image
-    : 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80';
+  const savedImageUrl = saveBase64Image(image);
+  const processedMedia = Array.isArray(media)
+    ? media.map((m, idx) => ({
+        ...m,
+        id: m.id || String(idx + 1),
+        url: saveBase64Image(m.url || savedImageUrl),
+        type: m.type || 'image'
+      }))
+    : (savedImageUrl ? [{ id: '1', url: savedImageUrl, type: 'image' }] : []);
 
   const productObj = {
     id: id || Date.now(),
@@ -486,16 +529,16 @@ app.post('/api/products', async (req, res) => {
     priceAED: priceAED ? parseFloat(priceAED) : undefined,
     stock: stock || 50,
     status: status || 'Published',
-    image: image || safeImageUrl,
-    media: media || (image ? [{ id: '1', url: image, type: 'image' }] : [])
+    image: savedImageUrl,
+    media: processedMedia
   };
 
   try {
     const categoryId = await resolveCategoryId(productObj.category, productObj.name);
 
     const [result] = await pool.query(
-      `INSERT INTO products (name, sku, category_id, description, regular_price, sell_price, stock_quantity, status, image_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (name, sku, category_id, description, regular_price, sell_price, stock_quantity, status, image_url, images)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productObj.name,
         productObj.sku,
@@ -505,7 +548,8 @@ app.post('/api/products', async (req, res) => {
         productObj.sellPrice,
         productObj.stock,
         productObj.status,
-        safeImageUrl
+        savedImageUrl,
+        JSON.stringify(processedMedia)
       ]
     );
 
