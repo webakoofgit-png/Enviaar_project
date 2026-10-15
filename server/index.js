@@ -101,6 +101,7 @@ app.get('/api/health', async (req, res) => {
 
 // Initial mock customer reviews fallback
 const initialMockReviews = [];
+const DUMMY_REVIEW_IDS = new Set(['rev_101', 'rev_102', 'rev_103', 'rev_104']);
 
 function loadFallbackReviews() {
   try {
@@ -108,7 +109,7 @@ function loadFallbackReviews() {
       const data = fs.readFileSync(FALLBACK_REVIEWS_FILE, 'utf-8');
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.filter((r) => !DUMMY_REVIEW_IDS.has(String(r.id)));
       }
     }
   } catch (err) {
@@ -119,13 +120,16 @@ function loadFallbackReviews() {
 
 function saveFallbackReviews(reviews) {
   try {
-    fs.writeFileSync(FALLBACK_REVIEWS_FILE, JSON.stringify(reviews, null, 2), 'utf-8');
+    const cleanReviews = (reviews || []).filter((r) => !DUMMY_REVIEW_IDS.has(String(r.id)));
+    fs.writeFileSync(FALLBACK_REVIEWS_FILE, JSON.stringify(cleanReviews, null, 2), 'utf-8');
   } catch (err) {
     console.warn('Failed to save reviews fallback file:', err.message);
   }
 }
 
 let mockReviews = loadFallbackReviews();
+// Cleanup any dummy reviews from MySQL table if it exists
+pool.query("DELETE FROM reviews WHERE id IN ('rev_101', 'rev_102', 'rev_103', 'rev_104')").catch(() => {});
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -869,13 +873,14 @@ app.put('/api/orders/:id', async (req, res) => {
 });
 
 // GET Reviews Endpoint
-app.get('/api/reviews', (req, res) => {
+app.get('/api/reviews', async (req, res) => {
   const { productId } = req.query;
+  const cleanList = mockReviews.filter((r) => !DUMMY_REVIEW_IDS.has(String(r.id)));
   if (productId) {
-    const filtered = mockReviews.filter(r => String(r.productId) === String(productId));
+    const filtered = cleanList.filter((r) => String(r.productId) === String(productId));
     return res.json(filtered);
   }
-  return res.json(mockReviews);
+  return res.json(cleanList);
 });
 
 // POST Review Endpoint (Text-Only Reviews)
@@ -910,14 +915,18 @@ app.post('/api/reviews', (req, res) => {
 });
 
 // DELETE Review Endpoint (Admin Review Deletion / Moderation)
-app.delete('/api/reviews/:id', (req, res) => {
+app.delete('/api/reviews/:id', async (req, res) => {
   const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM reviews WHERE id = ?', [id]);
+  } catch (err) {}
+
   const initialLength = mockReviews.length;
-  mockReviews = mockReviews.filter(r => String(r.id) !== String(id));
+  mockReviews = mockReviews.filter((r) => String(r.id) !== String(id));
 
   saveFallbackReviews(mockReviews);
 
-  if (mockReviews.length < initialLength) {
+  if (mockReviews.length < initialLength || ['rev_101', 'rev_102', 'rev_103', 'rev_104'].includes(String(id))) {
     return res.json({ success: true, message: `Review ${id} deleted successfully.` });
   } else {
     return res.status(404).json({ error: `Review ${id} not found.` });

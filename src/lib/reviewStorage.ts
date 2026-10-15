@@ -15,6 +15,16 @@ import { API_BASE_URL } from "@/config/api";
 
 export const initialReviews: Review[] = [];
 
+export const DUMMY_REVIEW_IDS = new Set(["rev_101", "rev_102", "rev_103", "rev_104"]);
+export const DUMMY_AUTHORS = new Set(["ananya sharma", "rohan v.", "priya kapoor", "meera nair"]);
+
+export function isDummyReview(r: any): boolean {
+  if (!r) return true;
+  if (DUMMY_REVIEW_IDS.has(String(r.id))) return true;
+  if (DUMMY_AUTHORS.has(String(r.authorName || "").trim().toLowerCase())) return true;
+  return false;
+}
+
 export function getLocalReviews(): Review[] {
   if (typeof window === "undefined") return [];
   try {
@@ -23,7 +33,8 @@ export function getLocalReviews(): Review[] {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((r) => !isDummyReview(r));
   } catch (err) {
     console.error("Failed to read reviews from localStorage", err);
     return [];
@@ -33,40 +44,35 @@ export function getLocalReviews(): Review[] {
 export function saveLocalReviews(reviews: Review[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+    const clean = (reviews || []).filter((r) => !isDummyReview(r));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
   } catch (err) {
     console.error("Failed to save reviews to localStorage", err);
   }
 }
 
 export function getReviewsForProduct(productId: string, allReviews: Review[]): Review[] {
-  return allReviews.filter((r) => String(r.productId) === String(productId));
+  return allReviews.filter((r) => String(r.productId) === String(productId) && !isDummyReview(r));
 }
 
 export async function fetchAllReviews(): Promise<Review[]> {
-  const local = getLocalReviews();
   try {
     const res = await fetch(`${API_BASE_URL}/api/reviews`);
     if (res.ok) {
       const serverReviews = await res.json();
-      if (Array.isArray(serverReviews) && serverReviews.length > 0) {
-        // Merge & deduplicate by ID
-        const seen = new Set<string>();
-        const merged: Review[] = [];
-        for (const r of [...serverReviews, ...local]) {
-          if (r && r.id && !seen.has(String(r.id))) {
-            seen.add(String(r.id));
-            merged.push(r);
-          }
-        }
-        saveLocalReviews(merged);
-        return merged;
+      if (Array.isArray(serverReviews)) {
+        const clean = serverReviews.filter((r) => !isDummyReview(r));
+        saveLocalReviews(clean);
+        return clean;
       }
     }
   } catch (err) {
     console.warn("Express backend offline for reviews, using local storage");
   }
-  return local;
+  const local = getLocalReviews();
+  const clean = local.filter((r) => !isDummyReview(r));
+  saveLocalReviews(clean);
+  return clean;
 }
 
 export async function addProductReview(data: {

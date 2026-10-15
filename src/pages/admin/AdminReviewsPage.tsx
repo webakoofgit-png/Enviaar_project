@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import {
   fetchAllReviews,
   deleteProductReview,
+  isDummyReview,
   type Review,
 } from "@/lib/reviewStorage";
 import { useStore } from "@/context/StoreContext";
@@ -28,7 +29,7 @@ export function AdminReviewsPage() {
     setLoading(true);
     try {
       const data = await fetchAllReviews();
-      setReviews(data);
+      setReviews(data.filter((r) => !isDummyReview(r)));
     } finally {
       setLoading(false);
     }
