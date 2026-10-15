@@ -39,17 +39,25 @@ try {
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use('/uploads', express.static(DIST_UPLOADS_DIR));
 
-function saveBase64Image(base64Str) {
-  if (!base64Str || typeof base64Str !== 'string' || !base64Str.startsWith('data:image/')) {
+function saveBase64Media(base64Str) {
+  if (!base64Str || typeof base64Str !== 'string' || !base64Str.startsWith('data:')) {
     return base64Str || '';
   }
   try {
-    const matches = base64Str.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+    const matches = base64Str.match(/^data:([a-zA-Z0-9\-\/]+);base64,(.+)$/);
     if (!matches || matches.length < 3) return base64Str;
-    const rawExt = matches[1].toLowerCase();
-    const ext = rawExt.includes('png') ? 'png' : rawExt.includes('webp') ? 'webp' : 'jpg';
+    const mime = matches[1].toLowerCase();
+    let ext = 'jpg';
+    if (mime.includes('png')) ext = 'png';
+    else if (mime.includes('webp')) ext = 'webp';
+    else if (mime.includes('gif')) ext = 'gif';
+    else if (mime.includes('mp4')) ext = 'mp4';
+    else if (mime.includes('webm')) ext = 'webm';
+    else if (mime.includes('mov') || mime.includes('quicktime')) ext = 'mov';
+    else if (mime.includes('video')) ext = 'mp4';
+
     const buffer = Buffer.from(matches[2], 'base64');
-    const filename = `product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filename = `media-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     
     try {
       fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
@@ -60,10 +68,11 @@ function saveBase64Image(base64Str) {
     
     return `/uploads/${filename}`;
   } catch (err) {
-    console.warn('Failed to save base64 image to disk:', err.message);
+    console.warn('Failed to save base64 media to disk:', err.message);
     return base64Str;
   }
 }
+const saveBase64Image = saveBase64Media;
 
 // Health and DB diagnostic endpoint
 app.get('/api/health', async (req, res) => {
@@ -439,8 +448,11 @@ app.get('/api/products', async (req, res) => {
 
   try {
     let sql = `
-      SELECT p.id, p.name, p.sku, p.regular_price AS regularPrice, p.sell_price AS sellPrice,
-             p.stock_quantity AS stock, p.status, p.image_url AS image, p.created_at AS createdAt,
+      SELECT p.id, p.name, p.slug, p.sku, p.regular_price AS regularPrice, p.sell_price AS sellPrice,
+             p.price_usd AS priceUSD, p.price_aed AS priceAED,
+             p.stock_quantity AS stock, p.status, p.image_url AS image, p.images AS media,
+             p.description, p.details, p.materials_finish AS materialsFinish,
+             p.created_at AS createdAt,
              COALESCE(c.name,
                CASE 
                  WHEN LOWER(p.name) LIKE '%earring%' THEN 'Earrings'
@@ -481,10 +493,26 @@ app.get('/api/products', async (req, res) => {
 
     const [rows] = await pool.query(sql, params);
     
-    const formatted = rows.map(r => ({
-      ...r,
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Jan 01, 2024'
-    }));
+    const formatted = rows.map(r => {
+      let parsedMedia = [];
+      if (r.media) {
+        try {
+          parsedMedia = typeof r.media === 'string' ? JSON.parse(r.media) : r.media;
+        } catch (e) {}
+      }
+      if (!Array.isArray(parsedMedia) || parsedMedia.length === 0) {
+        if (r.image) parsedMedia = [{ id: '1', url: r.image, type: 'image' }];
+      }
+      return {
+        ...r,
+        media: parsedMedia,
+        details: r.details || undefined,
+        materialsFinish: r.materialsFinish || undefined,
+        priceUSD: r.priceUSD ? parseFloat(r.priceUSD) : undefined,
+        priceAED: r.priceAED ? parseFloat(r.priceAED) : undefined,
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Jan 01, 2024'
+      };
+    });
 
     res.json(formatted);
   } catch (err) {
@@ -504,14 +532,23 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const { id, name, category, sku, regularPrice, sellPrice, priceUSD, priceAED, stock, status, image, media, description, details, materialsFinish } = req.body;
 
-  const savedImageUrl = saveBase64Image(image);
+  const savedImageUrl = saveBase64Media(image);
   const processedMedia = Array.isArray(media)
-    ? media.map((m, idx) => ({
-        ...m,
-        id: m.id || String(idx + 1),
-        url: saveBase64Image(m.url || savedImageUrl),
-        type: m.type || 'image'
-      }))
+    ? media.map((m, idx) => {
+        const rawUrl = typeof m === 'string' ? m : (m.url || '');
+        const savedUrl = saveBase64Media(rawUrl);
+        const isVideo = (typeof m === 'object' && m.type === 'video') ||
+          savedUrl.match(/\.(mp4|webm|mov)$/i) ||
+          savedUrl.includes('youtube.com') ||
+          savedUrl.includes('vimeo.com');
+
+        return {
+          id: (typeof m === 'object' && m.id) ? String(m.id) : String(idx + 1),
+          url: savedUrl,
+          type: isVideo ? 'video' : 'image',
+          name: (typeof m === 'object' && m.name) ? m.name : undefined
+        };
+      })
     : (savedImageUrl ? [{ id: '1', url: savedImageUrl, type: 'image' }] : []);
 
   const productObj = {
@@ -529,7 +566,7 @@ app.post('/api/products', async (req, res) => {
     priceAED: priceAED ? parseFloat(priceAED) : undefined,
     stock: stock || 50,
     status: status || 'Published',
-    image: savedImageUrl,
+    image: savedImageUrl || (processedMedia[0]?.url || ''),
     media: processedMedia
   };
 
@@ -537,18 +574,22 @@ app.post('/api/products', async (req, res) => {
     const categoryId = await resolveCategoryId(productObj.category, productObj.name);
 
     const [result] = await pool.query(
-      `INSERT INTO products (name, sku, category_id, description, regular_price, sell_price, stock_quantity, status, image_url, images)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (name, sku, category_id, description, details, materials_finish, regular_price, sell_price, price_usd, price_aed, stock_quantity, status, image_url, images)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productObj.name,
         productObj.sku,
         categoryId,
         productObj.description,
+        productObj.details || null,
+        productObj.materialsFinish || null,
         productObj.regularPrice,
         productObj.sellPrice,
+        productObj.priceUSD || 0.00,
+        productObj.priceAED || 0.00,
         productObj.stock,
         productObj.status,
-        savedImageUrl,
+        productObj.image,
         JSON.stringify(processedMedia)
       ]
     );
@@ -579,12 +620,69 @@ app.post('/api/products', async (req, res) => {
 // Update Product
 app.put('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, sellPrice, priceUSD, priceAED, stock, status, description, details, materialsFinish } = req.body;
+  const { name, category, regularPrice, sellPrice, priceUSD, priceAED, stock, status, description, details, materialsFinish, image, media } = req.body;
+
+  let savedImageUrl = image ? saveBase64Media(image) : null;
+  let processedMedia = null;
+  if (Array.isArray(media)) {
+    processedMedia = media.map((m, idx) => {
+      const rawUrl = typeof m === 'string' ? m : (m.url || '');
+      const savedUrl = saveBase64Media(rawUrl);
+      const isVideo = (typeof m === 'object' && m.type === 'video') ||
+        savedUrl.match(/\.(mp4|webm|mov)$/i) ||
+        savedUrl.includes('youtube.com') ||
+        savedUrl.includes('vimeo.com');
+
+      return {
+        id: (typeof m === 'object' && m.id) ? String(m.id) : String(idx + 1),
+        url: savedUrl,
+        type: isVideo ? 'video' : 'image',
+        name: (typeof m === 'object' && m.name) ? m.name : undefined
+      };
+    });
+    if (!savedImageUrl && processedMedia.length > 0) {
+      savedImageUrl = processedMedia[0].url;
+    }
+  }
 
   try {
+    let categoryId = null;
+    if (category) {
+      categoryId = await resolveCategoryId(category, name);
+    }
+
     await pool.query(
-      `UPDATE products SET name = COALESCE(?, name), description = COALESCE(?, description), sell_price = COALESCE(?, sell_price), stock_quantity = COALESCE(?, stock_quantity), status = COALESCE(?, status) WHERE id = ?`,
-      [name, description, sellPrice, stock, status, id]
+      `UPDATE products SET 
+         name = COALESCE(?, name),
+         category_id = COALESCE(?, category_id),
+         description = COALESCE(?, description),
+         details = COALESCE(?, details),
+         materials_finish = COALESCE(?, materials_finish),
+         regular_price = COALESCE(?, regular_price),
+         sell_price = COALESCE(?, sell_price),
+         price_usd = COALESCE(?, price_usd),
+         price_aed = COALESCE(?, price_aed),
+         stock_quantity = COALESCE(?, stock_quantity),
+         status = COALESCE(?, status),
+         image_url = COALESCE(?, image_url),
+         images = COALESCE(?, images)
+       WHERE id = ?`,
+      [
+        name || null,
+        categoryId,
+        description || null,
+        details || null,
+        materialsFinish || null,
+        regularPrice !== undefined ? regularPrice : null,
+        sellPrice !== undefined ? sellPrice : null,
+        priceUSD !== undefined ? priceUSD : null,
+        priceAED !== undefined ? priceAED : null,
+        stock !== undefined ? stock : null,
+        status || null,
+        savedImageUrl,
+        processedMedia ? JSON.stringify(processedMedia) : null,
+        id
+      ]
     );
   } catch (err) {
     console.warn('MySQL DB product update fallback used:', err.message);
@@ -598,9 +696,12 @@ app.put('/api/products/:id', async (req, res) => {
     if (details !== undefined) p.details = details;
     if (materialsFinish !== undefined) p.materialsFinish = materialsFinish;
     if (sellPrice) p.sellPrice = sellPrice;
+    if (regularPrice !== undefined) p.regularPrice = regularPrice;
     if (priceUSD !== undefined) p.priceUSD = priceUSD ? parseFloat(priceUSD) : undefined;
     if (priceAED !== undefined) p.priceAED = priceAED ? parseFloat(priceAED) : undefined;
     if (stock !== undefined) p.stock = stock;
+    if (savedImageUrl) p.image = savedImageUrl;
+    if (processedMedia) p.media = processedMedia;
     saveFallbackProducts(mockProducts);
   }
   res.json({ message: 'Product updated' });
