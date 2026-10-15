@@ -10,7 +10,7 @@
     "dev": "concurrently --names \"CLIENT,SERVER\" --prefix-colors \"cyan,yellow\" \"npm run client\" \"npm run server\"",
     "build": "tsc && vite build",
     "postinstall": "npm run build",
-    "start": "node server/index.js",
+    "start": "node server.js",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."

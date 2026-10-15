@@ -14,7 +14,14 @@ const FALLBACK_PRODUCTS_FILE = path.join(__dirname, 'products_fallback.json');
 const FALLBACK_REVIEWS_FILE = path.join(__dirname, 'reviews_fallback.json');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
+
+process.on('uncaughtException', (err) => {
+  console.error('Unhandled Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -705,9 +712,14 @@ if (fs.existsSync(distPath)) {
     }
     res.sendFile(path.join(distPath, 'index.html'));
   });
+} else {
+  console.warn('⚠️ Frontend dist directory not found at:', distPath);
+  app.get('/', (req, res) => {
+    res.send('ENVIAAR API Backend is running.');
+  });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 ENVIAAR Express Backend running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 ENVIAAR Express Backend running on http://0.0.0.0:${PORT}`);
   testConnection();
 });
