@@ -397,8 +397,16 @@ app.get('/api/products', async (req, res) => {
     const params = [];
 
     if (status && status !== 'All') {
-      sql += ` AND p.status = ?`;
-      params.push(status);
+      if (status.toLowerCase() === 'active') {
+        sql += ` AND (LOWER(p.status) = 'published' OR LOWER(p.status) = 'active')`;
+      } else if (status.toLowerCase() === 'drafts' || status.toLowerCase() === 'draft') {
+        sql += ` AND (LOWER(p.status) = 'draft' OR LOWER(p.status) = 'drafts')`;
+      } else if (status.toLowerCase() === 'archived') {
+        sql += ` AND LOWER(p.status) = 'archived'`;
+      } else {
+        sql += ` AND p.status = ?`;
+        params.push(status);
+      }
     }
 
     if (q) {

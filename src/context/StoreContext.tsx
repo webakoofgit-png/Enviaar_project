@@ -213,6 +213,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CustomerUser | null>(null);
 
   useEffect(() => {
+    try {
+      localStorage.removeItem("enviaar_deleted_product_keys");
+    } catch (e) {}
     setCart(readLocal("enviaar-cart", []));
     setWishlist(readLocal("enviaar-wishlist", []));
     setIsLoggedIn(readLocal("enviaar-auth", false));

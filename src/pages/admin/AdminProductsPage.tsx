@@ -285,6 +285,9 @@ export function AdminProductsPage() {
   };
 
   useEffect(() => {
+    try {
+      localStorage.removeItem("enviaar_deleted_product_keys");
+    } catch (e) {}
     fetchProducts();
   }, [activeTab, searchQuery]);
 

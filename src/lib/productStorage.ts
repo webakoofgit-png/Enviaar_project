@@ -137,12 +137,6 @@ export function markProductsAsDeleted(items: { id?: string | number; name?: stri
 export function filterDeletedProducts<T extends { id?: string | number; name?: string }>(
   items: T[],
 ): T[] {
-  const { ids, names } = getDeletedKeys();
-  if (ids.size === 0 && names.size === 0) return items;
-  return items.filter((item) => {
-    if (!item) return false;
-    if (item.id != null && ids.has(String(item.id))) return false;
-    if (item.name && names.has(item.name.toLowerCase().trim())) return false;
-    return true;
-  });
+  // MySQL database on Hostinger is the live source of truth.
+  return items;
 }
