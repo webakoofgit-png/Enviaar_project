@@ -10,6 +10,8 @@ import {
   Star,
   Trash2,
   Truck,
+  Tag,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +25,7 @@ import { collectionInfo, images, money } from "@/data/store";
 import type { MediaItem, Product } from "@/types/store";
 import { saveOrder, type CustomerOrder } from "@/lib/orderStorage";
 import { API_BASE_URL } from "@/config/api";
+import { getCMSContent } from "@/lib/cmsStorage";
 import {
   fetchAllReviews,
   addProductReview,
@@ -380,10 +383,49 @@ function ProductRail({ title, list }: { title: string; list: Product[] }) {
 export function CartPage() {
   const { cart, updateQuantity, removeFromCart, isLoggedIn, setAccountOpen } = useStore();
   const navigate = useNavigate();
+  const cms = getCMSContent();
+  const defaultPromo = cms.promoDiscountCode || "CIRCLE100";
   const [coupon, setCoupon] = useState("");
-  const [applied, setApplied] = useState(false);
-  const subtotal = cart.reduce((s, x) => s + x.product.price * x.quantity, 0);
-  const discount = applied ? Math.round(subtotal * 0.1) : 0;
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(() => localStorage.getItem("enviaar_applied_coupon"));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setAppliedCoupon(localStorage.getItem("enviaar_applied_coupon"));
+    };
+    window.addEventListener("enviaar-coupon-updated", handleUpdate);
+    return () => window.removeEventListener("enviaar-coupon-updated", handleUpdate);
+  }, []);
+
+  const subtotal = cart.reduce((s, x) => s + (Number(x.product?.price) || 0) * (x.quantity || 1), 0);
+  const discount = appliedCoupon ? Math.min(subtotal, 100) : 0;
+
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = coupon.trim().toUpperCase();
+    if (!clean) return;
+    const validCodes = [
+      (cms.promoDiscountCode || "CIRCLE100").toUpperCase(),
+      "CIRCLE100",
+      "ENVIAAR100",
+      "CIRCLE10",
+      "ENVIAAR10",
+    ];
+    if (validCodes.includes(clean)) {
+      setAppliedCoupon(clean);
+      localStorage.setItem("enviaar_applied_coupon", clean);
+      toast.success(`Coupon "${clean}" applied! ₹100 discount added.`);
+      setCoupon("");
+    } else {
+      toast.error(`Invalid coupon code. Try ${defaultPromo} for ₹100 off.`);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    localStorage.removeItem("enviaar_applied_coupon");
+    toast.info("Coupon removed.");
+  };
+
   return (
     <>
       <PageHero title="Shopping Cart" />
@@ -437,30 +479,49 @@ export function CartPage() {
         </div>
         <aside className="h-fit bg-secondary/35 p-5 sm:p-7">
           <h2 className="text-2xl sm:text-3xl">Order Summary</h2>
-          <form
-            className="mt-5 sm:mt-6 flex"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setApplied(coupon.trim().toUpperCase() === "ENVIAAR10");
-            }}
-          >
-            <Input
-              value={coupon}
-              onChange={(e) => setCoupon(e.target.value)}
-              placeholder="Coupon code"
-            />
-            <Button>Apply</Button>
-          </form>
-          <p className="mt-2 text-xs text-muted-foreground">Try ENVIAAR10</p>
+
+          {appliedCoupon ? (
+            <div className="mt-5 sm:mt-6 flex items-center justify-between rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Tag className="size-3.5" />
+                <span>Coupon <strong>{appliedCoupon}</strong> (₹100 OFF)</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="ml-2 text-muted-foreground hover:text-foreground text-xs underline inline-flex items-center gap-0.5"
+              >
+                <X className="size-3" /> Remove
+              </button>
+            </div>
+          ) : (
+            <>
+              <form
+                className="mt-5 sm:mt-6 flex gap-2"
+                onSubmit={handleApplyCoupon}
+              >
+                <Input
+                  value={coupon}
+                  onChange={(e) => setCoupon(e.target.value)}
+                  placeholder="Coupon code"
+                />
+                <Button type="submit">Apply</Button>
+              </form>
+              <p className="mt-2 text-xs text-muted-foreground">Try code {defaultPromo} for ₹100 off</p>
+            </>
+          )}
+
           <SummaryRow label="Subtotal" value={subtotal} />
-          <SummaryRow label="Discount" value={-discount} />
+          {discount > 0 && (
+            <SummaryRow label={`Coupon Discount (${appliedCoupon})`} text={`-₹${discount}`} />
+          )}
           <SummaryRow
             label="Shipping"
             text={subtotal >= 1000 ? "Complimentary" : "Calculated at checkout"}
           />
           <div className="mt-5 flex justify-between border-t pt-5 text-base sm:text-lg">
             <strong>Total</strong>
-            <strong>{money(subtotal - discount)}</strong>
+            <strong>{money(Math.max(0, subtotal - discount))}</strong>
           </div>
           <Button
             variant="luxury"
@@ -505,8 +566,41 @@ export function CheckoutPage() {
   const [state, setState] = useState("Maharashtra");
   const [pincode, setPincode] = useState("400050");
   const [paymentMethod, setPaymentMethod] = useState("UPI (Google Pay)");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(() => localStorage.getItem("enviaar_applied_coupon"));
+  const cms = getCMSContent();
+  const defaultPromo = cms.promoDiscountCode || "CIRCLE100";
 
-  const total = cart.reduce((s, x) => s + (Number(x?.product?.price) || 0) * (x?.quantity || 1), 0);
+  const subtotal = cart.reduce((s, x) => s + (Number(x?.product?.price) || 0) * (x?.quantity || 1), 0);
+  const discount = appliedCoupon ? Math.min(subtotal, 100) : 0;
+  const finalTotal = Math.max(0, subtotal - discount);
+
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = couponInput.trim().toUpperCase();
+    if (!clean) return;
+    const validCodes = [
+      (cms.promoDiscountCode || "CIRCLE100").toUpperCase(),
+      "CIRCLE100",
+      "ENVIAAR100",
+      "CIRCLE10",
+      "ENVIAAR10",
+    ];
+    if (validCodes.includes(clean)) {
+      setAppliedCoupon(clean);
+      localStorage.setItem("enviaar_applied_coupon", clean);
+      toast.success(`Coupon "${clean}" applied! ₹100 discount added.`);
+      setCouponInput("");
+    } else {
+      toast.error(`Invalid coupon code. Try ${defaultPromo} for ₹100 off.`);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    localStorage.removeItem("enviaar_applied_coupon");
+    toast.info("Coupon removed.");
+  };
 
   const handlePlaceOrder = async () => {
     const generatedOrderNum = `ENV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -522,7 +616,7 @@ export function CheckoutPage() {
       paymentMethod: paymentMethod,
       paymentStatus: (paymentMethod === "Cash on Delivery" || paymentMethod.toLowerCase().includes("cod") || paymentMethod.toLowerCase().includes("cash")) ? "Unpaid" : "Paid",
       status: "Processing",
-      totalAmount: total > 0 ? total : 7980,
+      totalAmount: finalTotal > 0 ? finalTotal : 0,
       items: cart.map((c) => ({
         id: c.product.id,
         name: c.product.name,
@@ -702,9 +796,60 @@ export function CheckoutPage() {
               </div>
             );
           })}
-          <div className="mt-6 flex justify-between border-t pt-4 sm:pt-5 text-sm sm:text-base">
+          <div className="mt-5 border-t pt-4 space-y-3">
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <Tag className="size-3.5" />
+                  <span>Coupon <strong>{appliedCoupon}</strong> (-₹100)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-muted-foreground hover:text-foreground text-xs underline inline-flex items-center gap-0.5"
+                >
+                  <X className="size-3" /> Remove
+                </button>
+              </div>
+            ) : (
+              <div>
+                <form
+                  className="flex gap-2"
+                  onSubmit={handleApplyCoupon}
+                >
+                  <Input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    placeholder="Coupon code"
+                    className="h-8 text-xs"
+                  />
+                  <Button type="submit" size="sm" variant="outline" className="h-8 text-xs">
+                    Apply
+                  </Button>
+                </form>
+                <p className="mt-1 text-[11px] text-muted-foreground">Use code {defaultPromo} for ₹100 off</p>
+              </div>
+            )}
+
+            <div className="flex justify-between text-xs sm:text-sm text-muted-foreground pt-1">
+              <span>Subtotal</span>
+              <span>{formatAmount(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-xs sm:text-sm text-emerald-600 font-medium">
+                <span>Coupon Discount ({appliedCoupon})</span>
+                <span>-₹{discount}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-xs sm:text-sm text-muted-foreground">
+              <span>Shipping</span>
+              <span>Complimentary</span>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-between border-t pt-4 text-sm sm:text-base">
             <strong>Total</strong>
-            <strong>{formatAmount(total)}</strong>
+            <strong>{formatAmount(finalTotal)}</strong>
           </div>
         </aside>
       </div>

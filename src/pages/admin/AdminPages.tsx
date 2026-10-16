@@ -1756,13 +1756,13 @@ export function AdminContent() {
             </div>
 
             <div className="pt-4 border-t border-slate-100 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900">10% Welcome Subscriber Popup</h3>
+              <h3 className="text-sm font-bold text-slate-900">₹100 Off Welcome Subscriber Popup</h3>
 
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div>
-                  <div className="font-bold text-slate-900 text-xs">Enable 10% Discount Welcome Modal</div>
+                  <div className="font-bold text-slate-900 text-xs">Enable ₹100 Off Welcome Modal</div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Automatically opens for new visitors after 4 seconds
+                    Automatically opens for new visitors after 4 seconds to grant ₹100 off
                   </p>
                 </div>
                 <input
@@ -2421,8 +2421,8 @@ function getSavingsAmount(type: string, value: string, minSpendStr: string): str
 
 export function AdminDiscounts() {
   const [coupons, setCoupons] = useState([
-    { id: "1", code: "ENVIAAR10", type: "Percentage", value: "10% OFF", minSpend: "₹1,999", usage: "0 / 500", status: "Active" },
-    { id: "2", code: "WELCOME15", type: "Percentage", value: "15% OFF", minSpend: "₹2,499", usage: "0 / 200", status: "Active" },
+    { id: "1", code: "CIRCLE100", type: "Fixed Amount", value: "₹100 OFF", minSpend: "₹0", usage: "0 / 500", status: "Active" },
+    { id: "2", code: "ENVIAAR100", type: "Fixed Amount", value: "₹100 OFF", minSpend: "₹0", usage: "0 / 500", status: "Active" },
     { id: "3", code: "ROYALFEST", type: "Fixed Amount", value: "₹1,000 OFF", minSpend: "₹8,000", usage: "0 / 100", status: "Active" },
     { id: "4", code: "FREESHIP", type: "Free Shipping", value: "100% Free Express Delivery", minSpend: "₹999", usage: "0 / 1000", status: "Active" },
   ]);

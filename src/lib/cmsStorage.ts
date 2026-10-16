@@ -26,7 +26,7 @@ const STORAGE_KEY = "enviaar_cms_content";
 const defaultCMS: CMSContent = {
   announcementText: "COMPLIMENTARY SHIPPING | EASY SHOPPING | PREMIUM JEWELLERY",
   promoPopupEnabled: true,
-  promoDiscountCode: "CIRCLE10",
+  promoDiscountCode: "CIRCLE100",
   heroSlides: [
     {
       id: "slide_1",
@@ -63,6 +63,9 @@ export function getCMSContent(): CMSContent {
       return defaultCMS;
     }
     const parsed = JSON.parse(raw);
+    if (parsed && parsed.promoDiscountCode === "CIRCLE10") {
+      parsed.promoDiscountCode = "CIRCLE100";
+    }
     return { ...defaultCMS, ...parsed };
   } catch (err) {
     console.error("Error reading CMS content", err);

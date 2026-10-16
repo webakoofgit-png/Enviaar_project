@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useStore } from "@/context/StoreContext";
 import { images, money } from "@/data/store";
 import { toast } from "sonner";
+import { getCMSContent } from "@/lib/cmsStorage";
 
 const Backdrop = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
   <motion.div
@@ -567,15 +568,31 @@ export function AccountDrawer() {
 
 export function PromoPopup() {
   const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const cms = getCMSContent();
+  const promoCode = cms.promoDiscountCode || "CIRCLE100";
+
   useEffect(() => {
+    if (!cms.promoPopupEnabled) return;
     if (localStorage.getItem("enviaar-promo") === "dismissed") return;
-    const timer = window.setTimeout(() => setOpen(true), 4000);
+    const timer = window.setTimeout(() => setOpen(true), 3500);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [cms.promoPopupEnabled]);
+
   const close = () => {
     localStorage.setItem("enviaar-promo", "dismissed");
     setOpen(false);
   };
+
+  const handleClaim = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    localStorage.setItem("enviaar_applied_coupon", promoCode);
+    localStorage.setItem("enviaar-promo", "dismissed");
+    window.dispatchEvent(new Event("enviaar-coupon-updated"));
+    toast.success(`Coupon code ${promoCode} applied! Enjoy ₹100 off on your order.`);
+    setOpen(false);
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -584,7 +601,7 @@ export function PromoPopup() {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            className="absolute left-1/2 top-1/2 grid w-[92%] max-w-3xl -translate-x-1/2 -translate-y-1/2 bg-background md:grid-cols-2"
+            className="absolute left-1/2 top-1/2 grid w-[92%] max-w-3xl -translate-x-1/2 -translate-y-1/2 bg-background md:grid-cols-2 shadow-2xl rounded-sm overflow-hidden"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <img
@@ -592,7 +609,7 @@ export function PromoPopup() {
               alt="ENVIAAR jewellery"
               className="hidden h-full min-h-96 w-full object-cover md:block"
             />
-            <div className="relative p-8 text-center md:p-12">
+            <div className="relative p-8 text-center md:p-12 flex flex-col justify-center">
               <Button
                 variant="ghost"
                 size="icon"
@@ -602,15 +619,22 @@ export function PromoPopup() {
                 <X />
               </Button>
               <img src="/image-copy.png" alt="ENVIAAR" className="h-8 w-auto mx-auto object-contain" />
-              <h2 className="mt-12 text-4xl">A Little Something For You</h2>
-              <p className="mt-5 text-muted-foreground">
-                Join the ENVIAAR circle and enjoy Rs 100 off on your first order.
+              <h2 className="mt-8 text-3xl sm:text-4xl font-display">A Little Something For You</h2>
+              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                Join the ENVIAAR circle and enjoy <span className="font-semibold text-foreground">₹100 off</span> on your order with coupon code <span className="font-mono font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 tracking-wider">{promoCode}</span>.
               </p>
-              <Input className="mt-8" type="email" placeholder="Email address" />
-              <Button className="mt-3 w-full" variant="luxury" onClick={close}>
-                Get My Rs 100 Off
-              </Button>
-              <button className="mt-6 text-xs underline" onClick={close}>
+              <form onSubmit={handleClaim} className="mt-6 space-y-3">
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <Button className="w-full uppercase tracking-wider text-xs" variant="luxury" type="submit">
+                  Claim My ₹100 Off
+                </Button>
+              </form>
+              <button className="mt-5 text-xs text-muted-foreground hover:text-foreground underline transition" onClick={close}>
                 No thanks, I’ll continue browsing.
               </button>
             </div>
