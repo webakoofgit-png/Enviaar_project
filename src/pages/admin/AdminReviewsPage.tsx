@@ -86,7 +86,7 @@ export function AdminReviewsPage() {
   const avgRating =
     reviews.length > 0
       ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-      : "5.0";
+      : "—";
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 select-none">
@@ -126,12 +126,12 @@ export function AdminReviewsPage() {
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
                   key={s}
-                  className={`h-4 w-4 ${s <= Math.round(Number(avgRating)) ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
+                  className={`h-4 w-4 ${reviews.length > 0 && s <= Math.round(Number(avgRating)) ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
                 />
               ))}
             </div>
           </div>
-          <span className="text-[10px] text-slate-500">Across all published jewellery</span>
+          <span className="text-[10px] text-slate-500">{reviews.length > 0 ? "Across all published jewellery" : "No reviews submitted yet"}</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">

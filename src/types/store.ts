@@ -34,7 +34,7 @@ export type Product = {
   colors: string[];
   sizes?: string[] | undefined;
   description: string;
-  rating: number;
+  rating?: number | undefined;
 };
 
 export type CartItem = { product: Product; quantity: number; finish: string; size?: string | undefined };

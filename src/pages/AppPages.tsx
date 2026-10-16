@@ -188,10 +188,10 @@ export function ProductPage({ slug }: { slug: string }) {
   );
 
   const avgRating = useMemo(() => {
-    if (productReviews.length === 0) return (product.rating || 4.8).toFixed(1);
+    if (productReviews.length === 0) return null;
     const sum = productReviews.reduce((acc, r) => acc + r.rating, 0);
     return (sum / productReviews.length).toFixed(1);
-  }, [productReviews, product.rating]);
+  }, [productReviews]);
 
   return (
     <div className="mx-auto max-w-[1500px] px-4 py-6 sm:py-8 md:px-10">
@@ -238,9 +238,20 @@ export function ProductPage({ slug }: { slug: string }) {
         <div className="lg:sticky lg:top-40 lg:self-start">
           <p className="text-xs uppercase tracking-[.16em]">{product.badge ?? product.category}</p>
           <h1 className="mt-2 sm:mt-3 text-3xl sm:text-4xl md:text-5xl">{product.name}</h1>
-          <div className="mt-3 sm:mt-4 flex items-center gap-2 text-sm">
-            <Star size={15} className="fill-current text-amber-500" /> {avgRating} · {productReviews.length} {productReviews.length === 1 ? "review" : "reviews"}
-          </div>
+          {productReviews.length > 0 ? (
+            <div className="mt-3 sm:mt-4 flex items-center gap-2 text-sm">
+              <Star size={15} className="fill-current text-amber-500" /> {avgRating} · {productReviews.length} {productReviews.length === 1 ? "review" : "reviews"}
+            </div>
+          ) : (
+            <div className="mt-3 sm:mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex text-muted-foreground/30">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} size={13} />
+                ))}
+              </div>
+              <span>No reviews yet</span>
+            </div>
+          )}
           <p className="mt-4 sm:mt-6 text-xl sm:text-2xl font-medium">{formatProductPrice(product)}</p>
           <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-muted-foreground">{product.description}</p>
           <Option title="Finish" values={product.colors} value={finish} onChange={setFinish} />
@@ -1179,7 +1190,7 @@ function ProductReviewsSection({
 }: {
   product: Product;
   reviews: Review[];
-  avgRating: string;
+  avgRating: string | null;
   isModalOpen: boolean;
   setIsModalOpen: (open: boolean) => void;
   onReviewAdded: () => void;
@@ -1241,76 +1252,92 @@ function ProductReviewsSection({
         </Button>
       </div>
 
-      {/* Ratings Breakdown Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-b">
-        <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-2xl text-center">
-          <div className="text-5xl font-bold font-serif">{avgRating}</div>
-          <div className="flex text-amber-500 mt-2 mb-1">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                className={`h-5 w-5 ${s <= Math.round(Number(avgRating)) ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
-              />
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground font-medium">
-            Based on {reviews.length} customer {reviews.length === 1 ? "review" : "reviews"}
-          </p>
-        </div>
-
-        <div className="md:col-span-2 space-y-2 flex flex-col justify-center">
-          {[5, 4, 3, 2, 1].map((stars) => {
-            const count = reviews.filter((r) => r.rating === stars).length;
-            const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-            return (
-              <div key={stars} className="flex items-center gap-3 text-xs">
-                <span className="w-12 font-medium flex items-center gap-1">
-                  {stars} <Star size={12} className="fill-current text-amber-500" />
-                </span>
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-                </div>
-                <span className="w-10 text-right text-muted-foreground">{count}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Reviews List */}
-      <div className="mt-8 space-y-6">
-        {reviews.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            No reviews yet. Be the first to write a review for <span className="font-semibold text-foreground">{product.name}</span>!
-          </div>
-        ) : (
-          reviews.map((r) => (
-            <div key={r.id} className="p-5 border rounded-2xl space-y-2 hover:border-primary/30 transition">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm">{r.authorName}</span>
-                  {r.verifiedPurchase && (
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                      <ShieldCheck size={11} /> Verified Buyer
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">{r.createdAt}</span>
-              </div>
-              <div className="flex text-amber-500">
+      {reviews.length > 0 ? (
+        <>
+          {/* Ratings Breakdown Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-b">
+            <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-2xl text-center">
+              <div className="text-5xl font-bold font-serif">{avgRating || "5.0"}</div>
+              <div className="flex text-amber-500 mt-2 mb-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
-                    className={`h-4 w-4 ${s <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                    className={`h-5 w-5 ${s <= Math.round(Number(avgRating || 5)) ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
                   />
                 ))}
               </div>
-              <h4 className="font-bold text-sm text-foreground pt-1">{r.title}</h4>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{r.comment}</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                Based on {reviews.length} customer {reviews.length === 1 ? "review" : "reviews"}
+              </p>
             </div>
-          ))
-        )}
-      </div>
+
+            <div className="md:col-span-2 space-y-2 flex flex-col justify-center">
+              {[5, 4, 3, 2, 1].map((stars) => {
+                const count = reviews.filter((r) => r.rating === stars).length;
+                const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                return (
+                  <div key={stars} className="flex items-center gap-3 text-xs">
+                    <span className="w-12 font-medium flex items-center gap-1">
+                      {stars} <Star size={12} className="fill-current text-amber-500" />
+                    </span>
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-10 text-right text-muted-foreground">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="mt-8 space-y-6">
+            {reviews.map((r) => (
+              <div key={r.id} className="p-5 border rounded-2xl space-y-2 hover:border-primary/30 transition">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{r.authorName}</span>
+                    {r.verifiedPurchase && (
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                        <ShieldCheck size={11} /> Verified Buyer
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{r.createdAt}</span>
+                </div>
+                <div className="flex text-amber-500">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-4 w-4 ${s <= r.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/30"}`}
+                    />
+                  ))}
+                </div>
+                <h4 className="font-bold text-sm text-foreground pt-1">{r.title}</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{r.comment}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        /* Clean Zero Reviews Empty State */
+        <div className="py-12 my-6 text-center rounded-2xl bg-muted/20 border border-dashed border-border/80 p-8 sm:p-10 space-y-3">
+          <div className="flex justify-center text-muted-foreground/30 gap-1.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} className="h-5 w-5" />
+            ))}
+          </div>
+          <h3 className="font-serif text-lg font-medium text-foreground">No customer reviews yet</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+            Be the first to share your experience with <span className="font-semibold text-foreground">{product.name}</span>!
+          </p>
+          <div className="pt-2">
+            <Button variant="luxury" onClick={() => setIsModalOpen(true)} className="text-xs px-5">
+              Write the First Review
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* WRITE A REVIEW MODAL (TEXT ONLY) */}
       {isModalOpen && (

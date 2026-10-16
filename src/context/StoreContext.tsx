@@ -137,7 +137,7 @@ export function apiProductToStoreProduct(item: any): Product {
     description:
       item.description ||
       "A refined ENVIAAR piece made for effortless transitions from everyday moments to occasions worth remembering.",
-    rating: item.rating || 4.8,
+    rating: item.rating ? Number(item.rating) : undefined,
   };
 }
 
