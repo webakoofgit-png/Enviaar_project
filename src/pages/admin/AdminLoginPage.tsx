@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "@/context/AdminAuthContext";
-import { Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export function AdminLoginPage() {
-  const [email, setEmail] = useState("admin@enviaar.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +28,7 @@ export function AdminLoginPage() {
         toast.success("Welcome back! Logged in successfully.");
         navigate(from, { replace: true });
       } else {
-        setError("Invalid credentials. Try admin@enviaar.com and admin123");
+        setError("Invalid email or password.");
         toast.error("Invalid email or password");
       }
     } catch (err) {
@@ -56,16 +56,6 @@ export function AdminLoginPage() {
           </p>
         </div>
 
-        {/* Demo Credentials Alert Banner */}
-        <div className="bg-slate-800/60 border border-slate-700/60 p-3.5 rounded-2xl text-xs space-y-1 text-slate-300">
-          <div className="flex items-center gap-1.5 font-bold text-amber-400">
-            <ShieldCheck className="h-4 w-4" /> Demo Access Credentials:
-          </div>
-          <div className="font-mono text-[11px] text-slate-400">
-            Email: <span className="text-white">admin@enviaar.com</span> | Password: <span className="text-white">admin123</span>
-          </div>
-        </div>
-
         {/* Error Alert */}
         {error && (
           <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs p-3 rounded-xl animate-in fade-in">
@@ -84,7 +74,7 @@ export function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@enviaar.com"
+                placeholder="Enter email address"
                 className="w-full h-11 pl-10 pr-4 text-xs bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
               />
             </div>
