@@ -64,6 +64,21 @@ export function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<"grid" | "table">(() => {
+    try {
+      return (localStorage.getItem("enviaar_admin_product_view") as "grid" | "table") || "table";
+    } catch {
+      return "table";
+    }
+  });
+
+  const handleViewModeChange = (mode: "grid" | "table") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("enviaar_admin_product_view", mode);
+    } catch {}
+  };
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageMode, setImageMode] = useState<"file" | "url">("file");
@@ -564,10 +579,28 @@ export function AdminProductsPage() {
             </button>
 
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-slate-500">
-              <button className="p-1.5 rounded-lg bg-white shadow-xs text-slate-800">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("grid")}
+                title="Grid View"
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === "grid"
+                    ? "bg-white shadow-xs text-slate-900 font-semibold"
+                    : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
                 <LayoutGrid className="h-3.5 w-3.5" />
               </button>
-              <button className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("table")}
+                title="Table View"
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === "table"
+                    ? "bg-white shadow-xs text-slate-900 font-semibold"
+                    : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
                 <List className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -590,97 +623,213 @@ export function AdminProductsPage() {
           </div>
         </div>
 
-        {/* PRODUCTS DATA TABLE */}
-        <div className="overflow-x-auto border-t border-slate-100 pt-2">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="p-3 w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.length === products.length && products.length > 0}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
-                  />
-                </th>
-                <th className="p-3 font-semibold">Product Name</th>
-                <th className="p-3 font-semibold">SKU & Create Date</th>
-                <th className="p-3 font-semibold">Price</th>
-                <th className="p-3 font-semibold">Stock</th>
-                <th className="p-3 font-semibold">Status</th>
-                <th className="p-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {products.map((product) => {
-                const isSelected = selectedIds.includes(product.id);
-                return (
-                  <tr
-                    key={product.id}
-                    className={`hover:bg-slate-50/80 transition-colors ${
-                      isSelected ? "bg-amber-50/40" : ""
-                    }`}
-                  >
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelectRow(product.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
-                      />
-                    </td>
-
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
+        {/* PRODUCTS VIEW: GRID OR TABLE */}
+        {viewMode === "grid" ? (
+          <div className="border-t border-slate-100 pt-3">
+            {products.length === 0 ? (
+              <div className="py-16 text-center text-slate-400">
+                <LayoutGrid className="h-10 w-10 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                <p className="font-semibold text-slate-700 text-sm">No products found</p>
+                <p className="text-xs text-slate-400 mt-1">Try adjusting your search query or filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {products.map((product) => {
+                  const isSelected = selectedIds.includes(product.id);
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => toggleSelectRow(product.id)}
+                      className={`group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col cursor-pointer ${
+                        isSelected
+                          ? "border-amber-400 ring-2 ring-amber-400/20 shadow-md bg-amber-50/20"
+                          : "border-slate-200/80 hover:border-slate-300 hover:shadow-md"
+                      }`}
+                    >
+                      {/* Image & Badges */}
+                      <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
                         <img
-                          src={product.image}
+                          src={product.image || "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&q=80"}
                           alt={product.name}
-                          className="h-10 w-10 rounded-xl object-cover bg-slate-100 border border-slate-200/60 shrink-0"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div>
-                          <div className="font-bold text-slate-900">{product.name}</div>
-                          <div className="text-[11px] text-slate-400">{product.category}</div>
+
+                        {/* Top overlay: Checkbox + Status */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                          <div
+                            className="pointer-events-auto"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectRow(product.id)}
+                              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer bg-white/95 shadow-xs"
+                            />
+                          </div>
+                          <div className="pointer-events-auto shadow-xs">
+                            {renderStatusBadge(product.status)}
+                          </div>
+                        </div>
+
+                        {/* Stock Tag on Bottom */}
+                        <div className="absolute bottom-2 left-2 pointer-events-none">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/75 text-white backdrop-blur-xs">
+                            Stock: {product.stock}
+                          </span>
                         </div>
                       </div>
-                    </td>
 
-                    <td className="p-3 text-slate-600 font-mono">
-                      <div className="font-bold text-slate-900">{product.sku}</div>
-                      <div className="text-[11px] text-slate-400 font-sans">{product.createdAt}</div>
-                    </td>
+                      {/* Card Content */}
+                      <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-400">
+                            <span className="uppercase font-semibold tracking-wider truncate max-w-[120px]">{product.category}</span>
+                            <span className="font-mono text-[10px] text-slate-400">{product.sku}</span>
+                          </div>
+                          <h3
+                            className="font-bold text-slate-900 text-xs sm:text-sm mt-1 line-clamp-1 group-hover:text-amber-600 transition-colors"
+                            title={product.name}
+                          >
+                            {product.name}
+                          </h3>
+                        </div>
 
-                    <td className="p-3">
-                      <div className="font-bold text-slate-900">
-                        ₹{product.sellPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {/* Pricing & Edit Action */}
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                          <div>
+                            <div className="font-bold text-slate-900 text-sm">
+                              ₹{product.sellPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </div>
+                            {product.regularPrice > product.sellPrice && (
+                              <div className="text-[10px] text-slate-400 line-through">
+                                MRP ₹{product.regularPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(product);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 rounded-lg transition cursor-pointer shadow-xs"
+                          >
+                            <Edit2 className="h-3 w-3 text-amber-600" />
+                            Edit
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-[11px] text-slate-400">
-                        MRP ₹{product.regularPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </div>
-                    </td>
-
-                    <td className="p-3 text-slate-700 font-semibold">
-                      {product.stock.toLocaleString()}
-                    </td>
-
-                    <td className="p-3">{renderStatusBadge(product.status)}</td>
-                    <td className="p-3 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEditModal(product);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 rounded-xl transition cursor-pointer shadow-xs"
-                      >
-                        <Edit2 className="h-3.5 w-3.5 text-amber-600" />
-                        Edit
-                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* PRODUCTS DATA TABLE */
+          <div className="overflow-x-auto border-t border-slate-100 pt-2">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="p-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === products.length && products.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                    />
+                  </th>
+                  <th className="p-3 font-semibold">Product Name</th>
+                  <th className="p-3 font-semibold">SKU & Create Date</th>
+                  <th className="p-3 font-semibold">Price</th>
+                  <th className="p-3 font-semibold">Stock</th>
+                  <th className="p-3 font-semibold">Status</th>
+                  <th className="p-3 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-12 text-center text-slate-400">
+                      <List className="h-8 w-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                      <p className="font-semibold text-slate-700 text-sm">No products found</p>
+                      <p className="text-xs text-slate-400 mt-1">Try adjusting your search query or filters.</p>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  products.map((product) => {
+                    const isSelected = selectedIds.includes(product.id);
+                    return (
+                      <tr
+                        key={product.id}
+                        className={`hover:bg-slate-50/80 transition-colors ${
+                          isSelected ? "bg-amber-50/40" : ""
+                        }`}
+                      >
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectRow(product.id)}
+                            className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                          />
+                        </td>
+
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-10 w-10 rounded-xl object-cover bg-slate-100 border border-slate-200/60 shrink-0"
+                            />
+                            <div>
+                              <div className="font-bold text-slate-900">{product.name}</div>
+                              <div className="text-[11px] text-slate-400">{product.category}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-3 text-slate-600 font-mono">
+                          <div className="font-bold text-slate-900">{product.sku}</div>
+                          <div className="text-[11px] text-slate-400 font-sans">{product.createdAt}</div>
+                        </td>
+
+                        <td className="p-3">
+                          <div className="font-bold text-slate-900">
+                            ₹{product.sellPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            MRP ₹{product.regularPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </div>
+                        </td>
+
+                        <td className="p-3 text-slate-700 font-semibold">
+                          {product.stock.toLocaleString()}
+                        </td>
+
+                        <td className="p-3">{renderStatusBadge(product.status)}</td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(product);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 rounded-xl transition cursor-pointer shadow-xs"
+                          >
+                            <Edit2 className="h-3.5 w-3.5 text-amber-600" />
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* FLOATING BULK ACTION BAR */}
